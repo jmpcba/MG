@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "prespuesto_bucket" {
-  bucket = "mg-presupuesto-lambda"
+  bucket = "jmpcba-mg-presupuesto-lambda"
   acl    = "public-read"
   policy = <<EOF
   {
