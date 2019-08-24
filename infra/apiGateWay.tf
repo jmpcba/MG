@@ -19,7 +19,6 @@ resource "aws_api_gateway_stage" "prod_stage" {
 
 
 resource "aws_api_gateway_deployment" "presupuesto_prod_deployment" {
-  depends_on = ["aws_api_gateway_integration.presupuesto_get_integration"]
 
   rest_api_id = "${aws_api_gateway_rest_api.MG_restapi.id}"
   stage_name  = "prod"
@@ -33,8 +32,7 @@ resource "aws_api_gateway_stage" "dev_stage" {
 
 
 resource "aws_api_gateway_deployment" "dev_deployment" {
-  depends_on = ["aws_api_gateway_integration.presupuesto_get_integration"]
-
+  
   rest_api_id = "${aws_api_gateway_rest_api.MG_restapi.id}"
   stage_name  = "DEV"
 }
@@ -47,21 +45,17 @@ resource "aws_api_gateway_resource" "presupuesto" {
 }
 
 
-resource "aws_api_gateway_method" "presupuesto_get_method" {
+resource "aws_api_gateway_method" "presupuesto_post_method" {
     rest_api_id          = "${aws_api_gateway_rest_api.MG_restapi.id}"
     resource_id          = "${aws_api_gateway_resource.presupuesto.id}"
-    http_method          = "GET"
+    http_method          = "POST"
     authorization        = "NONE"
-  
-    request_parameters   = {
-            "method.request.querystring.tables" = true
-    }
 }
 
-resource "aws_api_gateway_integration" "presupuesto_get_integration" {
+resource "aws_api_gateway_integration" "presupuesto_post_integration" {
     rest_api_id             = "${aws_api_gateway_rest_api.MG_restapi.id}"
     resource_id             = "${aws_api_gateway_resource.presupuesto.id}"
-    http_method             = "${aws_api_gateway_method.presupuesto_get_method.http_method}"
+    http_method             = "${aws_api_gateway_method.presupuesto_post_method.http_method}"
     content_handling        = "CONVERT_TO_TEXT" 
     integration_http_method = "POST"
     type                    = "AWS_PROXY"

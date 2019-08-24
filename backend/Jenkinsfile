@@ -1,0 +1,40 @@
+
+def sitePackageDir = "env/lib/python3.6/site-packages"
+node {
+    stage('Clean Up'){
+        cleanWs()
+    }
+    stage('Clone'){
+        git credentialsId: 'GIT', url: 'https://github.com/jmpcba/MG.git'
+    }
+
+    stage('Build') { 
+        echo "#########################"
+        echo "# BUILDING DEPENDENCIES #"
+        echo "#########################"
+        sh "python3 -m venv env"
+        sh """. env/bin/activate
+        python3 -m pip install -r requirements.txt
+        deactivate"""
+        
+        sh "cp backend/* ${sitePackageDir}"
+        dir(sitePackageDir){
+            sh "zip -qr9 presupuesto.zip ."
+            sh "mv presupuesto.zip ${WORKSPACE}"
+        }
+    }
+
+    stage('Deploy') {
+        echo "####################"
+        echo "# UPLOADING TO AWS #"
+        echo "####################"  
+            withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1') {
+            sh """. env/bin/activate
+            python3 -m pip install --upgrade awscli
+            aws s3 cp presupuesto.zip s3://jmpcba-lambda/presupuesto.zip
+            aws lambda update-function-code --function-name HC_prestador_service --s3-bucket jmpcba-lambda --s3-key presupuesto.zip
+            aws lambda update-function-code --function-name HC_paciente_service --s3-bucket jmpcba-lambda --s3-key presupuesto.zip
+            deactivate"""
+        }
+    }
+}
