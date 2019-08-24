@@ -12,7 +12,7 @@ resource "aws_lambda_permission" "MG_lambda_permission" {
 resource "aws_lambda_function" "MG_presupuesto_lambda" {
   function_name = "HC_data_service"
   s3_bucket     = "mg-presupuesto-lambda"
-  s3_key        = "function.zip"
+  s3_key        = "presupuesto.zip"
   role          = "${aws_iam_role.MG_presupuesto_lambda_role.arn}"
   runtime       = "python3.6"
   handler       = "main.handler"
@@ -29,17 +29,17 @@ resource "aws_iam_role" "MG_presupuesto_lambda_role" {
 
     assume_role_policy = <<POLICY
         {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-            "Action": "sts:AssumeRole",
-            "Principal": {
-                "Service": "lambda.amazonaws.com"
-            },
-            "Effect": "Allow",
-            "Sid": ""
-            }
-        ]
+    "Version": "2012-10-17",
+    "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ses:SendEmail",
+                        "ses:SendRawEmail"
+                    ],
+                    "Resource": "*"
+                }
+            ]
         }
         POLICY
     }
