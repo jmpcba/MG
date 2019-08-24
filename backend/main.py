@@ -8,4 +8,7 @@ def handler(event, context):
     logger.info("INICIO")
     logger.info(f"EVENT: {str(event)}")
 
-    return event
+    return {
+            'statusCode': 200,
+            'body': event
+            }
