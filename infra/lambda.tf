@@ -16,12 +16,6 @@ resource "aws_lambda_function" "MG_presupuesto_lambda" {
   role          = "${aws_iam_role.MG_presupuesto_lambda_role.arn}"
   runtime       = "python3.6"
   handler       = "main.handler"
-  environment {
-        variables = {
-            "db_password" = "${var.db_password}"
-            }
-        }
-
 }
 
 # IAM
