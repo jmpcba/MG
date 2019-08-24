@@ -1,0 +1,47 @@
+node {
+    stage('Clone'){
+        git credentialsId: 'GIT', url: 'https://github.com/jmpcba/MG.git'
+    }
+
+    if (params.PLAN){
+        stage('Plan') {
+            ansiColor('gnome-terminal') {
+                echo "##################"
+                echo "# TERRAFORM PLAN #"
+                echo "##################"
+                
+                dir('infra') {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'AWS CREDENTIALS', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'], string(credentialsId: 'TF_VAR_db_password', variable: 'TF_VAR_db_password')]) {
+                            sh '''
+                                set +x
+                                terraform version
+                                terraform init
+                                terraform plan
+                                '''
+                    }
+                }
+            }
+        }
+    }
+
+    if (params.APPLY){
+        stage('Apply') {
+            ansiColor('gnome-terminal') {
+                echo "###################"
+                echo "# TERRAFORM APPLY #"
+                echo "###################"
+                
+                dir('infra') {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'AWS CREDENTIALS', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'], string(credentialsId: 'TF_VAR_db_password', variable: 'TF_VAR_db_password')]) {
+                            sh '''
+                                set +x
+                                terraform version
+                                terraform init
+                                terraform apply -auto-approve
+                                '''
+                    }
+                }
+            }
+        }
+    }
+}
