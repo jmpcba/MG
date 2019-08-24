@@ -19,26 +19,27 @@ resource "aws_lambda_function" "MG_presupuesto_lambda" {
 }
 
 # IAM
-resource "aws_iam_role" "MG_presupuesto_lambda_role" {
-    name        = "MG-send-email"
+resource "aws_iam_role" "mg_presupuesto_lambda_role" {
+    name        = "lambda-vpc-role"
     description = "Allows Lambda functions to call AWS services on your behalf."
 
     tags = {
-          "name" = "MG-send-email"
+          "name" = "mg-presupuesto-lambda-role"
         }
 
-    assume_role_policy = <<EOF
-                    {
-                "Version": "2012-10-17",
-                "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": [
-                                    "ses:SendEmail",
-                                    "ses:SendRawEmail"
-                                ],
-                            }
-                        ]
-                    }
-                    EOF
-                }
+    assume_role_policy = <<POLICY
+        {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+                "Service": "lambda.amazonaws.com"
+            },
+            "Effect": "Allow",
+            "Sid": ""
+            }
+        ]
+        }
+        POLICY
+    }
