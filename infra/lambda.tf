@@ -37,7 +37,6 @@ resource "aws_iam_role" "MG_presupuesto_lambda_role" {
                                     "ses:SendEmail",
                                     "ses:SendRawEmail"
                                 ],
-                                "Resource": "*"
                             }
                         ]
                     }
