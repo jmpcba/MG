@@ -19,7 +19,7 @@ resource "aws_lambda_function" "MG_presupuesto_lambda" {
 }
 
 # IAM
-resource "aws_iam_role" "mg_presupuesto_lambda_role" {
+resource "aws_iam_role" "MG_presupuesto_lambda_role" {
     name        = "lambda-vpc-role"
     description = "Allows Lambda functions to call AWS services on your behalf."
 
