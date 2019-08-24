@@ -3,7 +3,7 @@ resource "aws_s3_bucket" "website" {
   bucket = "${var.website_bucket_name}"
   acl = "public-read"
 
-  tags {
+  tags = {
     Name = "Website"
     Environment = "production"
   }

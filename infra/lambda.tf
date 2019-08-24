@@ -27,7 +27,7 @@ resource "aws_iam_role" "MG_presupuesto_lambda_role" {
           "name" = "MG-send-email"
         }
 
-    assume_role_policy = <<POLICY
+    assume_role_policy = <<EOF
                     {
                 "Version": "2012-10-17",
                 "Statement": [
@@ -41,5 +41,5 @@ resource "aws_iam_role" "MG_presupuesto_lambda_role" {
                             }
                         ]
                     }
-                    POLICY
+                    EOF
                 }
