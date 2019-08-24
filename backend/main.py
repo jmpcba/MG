@@ -8,4 +8,4 @@ def handler(event, context):
     logger.info("INICIO")
     logger.info(f"EVENT: {str(event)}")
 
-    return event['body']
+    return event
