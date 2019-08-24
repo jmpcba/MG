@@ -19,7 +19,7 @@ resource "aws_api_gateway_stage" "prod_stage" {
 
 
 resource "aws_api_gateway_deployment" "presupuesto_prod_deployment" {
-
+  depends_on = ["aws_api_gateway_integration.presupuesto_post_integration"]
   rest_api_id = "${aws_api_gateway_rest_api.MG_restapi.id}"
   stage_name  = "prod"
 }
@@ -32,7 +32,7 @@ resource "aws_api_gateway_stage" "dev_stage" {
 
 
 resource "aws_api_gateway_deployment" "dev_deployment" {
-  
+  depends_on = ["aws_api_gateway_integration.presupuesto_post_integration"]
   rest_api_id = "${aws_api_gateway_rest_api.MG_restapi.id}"
   stage_name  = "DEV"
 }
