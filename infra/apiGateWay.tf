@@ -1,7 +1,7 @@
 # RESTAPI
 resource "aws_api_gateway_rest_api" "MG_restapi" {
   name = "MG"
-  description = "HC REST service"
+  description = "MG REST service"
 }
 
 resource "aws_api_gateway_resource" "api_version_1" {
