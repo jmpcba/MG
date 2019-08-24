@@ -7,6 +7,6 @@ variable "prod_stage_name" {
 }
 
 variable "website_bucket_name" {
-  default = "jmpcba-lambda"
+  default = "jmpcba-mg-presupuesto"
 }
 
