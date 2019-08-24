@@ -11,7 +11,7 @@ resource "aws_lambda_permission" "MG_lambda_permission" {
 
 resource "aws_lambda_function" "MG_presupuesto_lambda" {
   function_name = "mg_presupuesto"
-  s3_bucket     = "mg-presupuesto-lambda"
+  s3_bucket     = "jmpcba-lambda"
   s3_key        = "presupuesto.zip"
   role          = "${aws_iam_role.MG_presupuesto_lambda_role.arn}"
   runtime       = "python3.6"
