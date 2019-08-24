@@ -28,7 +28,7 @@ resource "aws_iam_role" "MG_presupuesto_lambda_role" {
         }
 
     assume_role_policy = <<POLICY
-        {
+    {
         "Version": "2012-10-17",
         "Statement": [
             {
