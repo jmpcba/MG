@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "prespuesto_bucket" {
-  bucket = "s3-website-test.hashicorp.com"
+  bucket = "mg-presupuesto-lambda"
   acl    = "public-read"
   policy = <<EOF
   {
