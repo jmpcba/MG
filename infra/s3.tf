@@ -1,4 +1,4 @@
-resource "aws_s3_bucket" "b" {
+resource "aws_s3_bucket" "prespuesto_bucket" {
   bucket = "s3-website-test.hashicorp.com"
   acl    = "public-read"
   policy = <<EOF
