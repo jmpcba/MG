@@ -13,7 +13,7 @@
         <div class="page-header text-center">
             <h1>MG Placas y Placares</h1>
         </div>
-        <form method="POST" action="https://8slcpf2nkc.execute-api.us-east-1.amazonaws.com/prod/v1/presupuesto">
+        <form id="frmPresupuesto" method="POST" action="https://8slcpf2nkc.execute-api.us-east-1.amazonaws.com/prod/v1/presupuesto">
             <div class="row">
                 <div class="col-md-12">
                     <div id="pnlError" class="alert alert-danger" role="alert" style="display:none">
@@ -95,6 +95,16 @@
                 })
             })
         })
+
+
+        $.post($("#contact-us-form").attr('action'), JSON.stringify({
+                producto: $("#frmPresupuesto input[name='name']").val(),
+                cantidad: $("#frmPresupuesto input[name='email']").val(),
+                unitario: $("#frmPresupuesto input[name='phone']").val(),
+                total: $("#frmPresupuesto textarea[name='message']").val(),
+            }), function (data) {
+                $("#frmPresupuesto button").hide();
+            }, 'json');
     </script>
   </body>
 </html>
