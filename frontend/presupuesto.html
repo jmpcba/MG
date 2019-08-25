@@ -13,7 +13,7 @@
         <div class="page-header text-center">
             <h1>MG Placas y Placares</h1>
         </div>
-        <form id="frmPresupuesto" method="POST" action="https://8slcpf2nkc.execute-api.us-east-1.amazonaws.com/prod/v1/presupuesto">
+        <form id="frmPresupuesto" method="POST">
             <div class="row">
                 <div class="col-md-12">
                     <div id="pnlError" class="alert alert-danger" role="alert" style="display:none">
@@ -59,9 +59,9 @@
                     </div>
                 </div>
             </div>
-            <button id="btnAgregar" type="button" class="btn btn-primary"><strong>+</strong></button>
-            <button id="btnEliminar" type="button" class="btn btn-primary"><strong>-</strong></button>
-            <button id="btnEnviar" type="submit" class="btn btn-primary">Enviar</button>
+            <button id="btnAgregar" type="button" class="btn btn-secondary"><strong>+</strong></button>
+            <button id="btnEliminar" type="button" class="btn btn-secondary"><strong>-</strong></button>
+            <button id="btnEnviar" onClick="submitToAPI(event)" type="button" class="btn btn-primary float-right">Enviar</button>
             </form>
     </div>
 
@@ -70,7 +70,8 @@
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-
+    
+    <script type="text/javascript" src="js/validaciones.js"></script>
     <script type="text/javascript">
         $(document).ready(function () {
             
@@ -102,46 +103,102 @@
 
             return dom
             }
-            
-            //FUNCIONES
 
-            $(".validarNum").change(function () {
-                var err = false
-                $(".validarNum").each( function( i, element ) {
-                    var valor = $(element).val() 
-                    console.log(valor)
-                    if (isNaN(valor)){
-                        $("#pnlError").show()
-                        $(element).addClass("is-invalid")
-                        err = true
-                    }else{
-                        $("#pnlError").hide()
-                        $(element).removeClass("is-invalid")
-                    }
-                    
-                    if(err){
-                        $("#btnEnviar").attr("disabled", false)
-                        $("pnlError").show()
-                    }else{
-                        $("#btnEnviar").attr("disabled", true)
-                        $("pnlError").hide()
-                    }
-                })
-            })
             var i = 0
+            
+            //INICIAR CONTROLES
+            $("#btnEliminar").attr("disabled", true)
+            $("#btnEnviar").attr("disabled", true)
+
+            //VALIDACIONES
+
+            $("div").on('keyup', 'input', function(){
+                
+                $("input").each(function( i, element ){
+                    var valor = $(element).val()
+                    if(valor == ""){
+                        $(element).addClass("is-invalid")
+                        $(element).removeClass("is-valid")
+                    }else if($(element).hasClass('validarNum') && isNaN(valor)){
+                        $(element).addClass("is-invalid")
+                        $(element).removeClass("is-valid")
+                    }else{
+                        $(element).addClass("is-valid")
+                        $(element).removeClass("is-invalid")
+                        }
+                })
+
+                if($(".is-invalid").length == 0){
+                    $("#btnEnviar").attr("disabled", false)
+                }else{
+                    $("#btnEnviar").attr("disabled", true)
+                }
+            })
+
+            $("div").on('keyup', '.validarNum', function(){
+                var parDiv = $(this).parents(".row")
+                var cant = parDiv.find("[id^=txtCant]").val()
+                var precio = parDiv.find("[id^=txtUnitario]").val()
+
+                if (!isNaN(cant) && !isNaN(precio) && cant != "" && precio != ""){
+                    parDiv.find("[id^=txtTotal]").val(precio * cant)
+                }
+            })
+
             $("#btnAgregar").click(function(){
                 i++
                 dom = nuevaLinea(i)
                 $(".row:last").after(dom)
+                $("#btnEliminar").attr("disabled", false)
             }) 
 
             $("#btnEliminar").click(function(){
+                
                 if (i>0){
                     $(".row:last").remove()
                     i--
                 }
-            })            
-        })
+                if(i==0){
+                    $("#btnEliminar").attr("disabled", true)
+                }
+            })   
+
+            function submitToAPI(e) {
+                e.preventDefault();
+                var URL = "https://8slcpf2nkc.execute-api.us-east-1.amazonaws.com/prod/v1/presupuesto"
+
+                var name = $("#name-input").val();
+                var phone = $("#phone-input").val();
+                var email = $("#email-input").val();
+                var desc = $("#description-input").val();
+                var data = {
+                    name : name,
+                    phone : phone,
+                    email : email,
+                    desc : desc
+                    };
+
+                $.ajax({
+                    type: "POST",
+                    url : URL,
+                    dataType: "json",
+                    crossDomain: "true",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(data),
+
+                    
+                    success: function () {
+                    // clear form and show a success message
+                    alert("Successfull");
+                    $("#frmPresupuesto").reset();
+                    location.reload();
+                        },
+                        error: function () {
+                        // show an error message
+                        alert("UnSuccessfull");
+                        }});
+                    }        
+                })
     </script>
   </body>
 </html>
