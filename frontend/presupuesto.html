@@ -11,7 +11,8 @@
   <body>
     <div class="container">
         <div class="page-header text-center">
-            <h1>MG Placas y Placares</h1>
+            <h1>Presupuesto MG Placas y Placares</h1>
+            <hr>
         </div>
         <form id="frmPresupuesto" method="POST">
             <div class="row">
@@ -25,7 +26,7 @@
                 <div class="col-md-12">
                     <div class="form-group">
                         <label for="exampleInputEmail1">Email cliente</label>
-                        <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="email cliente">
+                        <input type="email" class="form-control" id="txtMail" aria-describedby="emailHelp" placeholder="email cliente">
                         <small id="emailHelp" class="form-text text-muted">Ingrese el mail del cliente.</small>
                     </div>
                 </div>
@@ -35,11 +36,11 @@
                     <label>Presupuesto</label>
                 </div>
             </div>
-            <div class="row">
+            <div class="row entradas">
                 <div class="form-group col-md-6">
                     <input type="text" class="form-control" name="prod" id="txtProducto" placeholder="Producto">
                 </div>
-                <div class="form-group col-md-1">
+                <div class="form-group col-md-2">
                     <input type="text" class="form-control validarNum" name="cant" id="txtCant" placeholder="Cant">
                 </div>
                 <div class="form-group col-md-2">
@@ -50,7 +51,7 @@
                         <input type="text" class="form-control validarNum" name="unit" id="txtUnitario" placeholder="Unitario" aria-label="Total" aria-describedby="basic-addon-unitario">
                     </div>
                 </div>
-                <div class="form-group col-md-3 ult">
+                <div class="form-group col-md-2 ult">
                     <div class="input-group mb-3">
                         <div class="input-group-prepend">
                             <span class="input-group-text" id="basic-addon1">$</span>
@@ -61,13 +62,12 @@
             </div>
             <button id="btnAgregar" type="button" class="btn btn-secondary"><strong>+</strong></button>
             <button id="btnEliminar" type="button" class="btn btn-secondary"><strong>-</strong></button>
-            <button id="btnEnviar" onClick="submitToAPI(event)" type="button" class="btn btn-primary float-right">Enviar</button>
+            <button id="btnEnviar" type="button" class="btn btn-primary float-right">Enviar</button>
             </form>
     </div>
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     
@@ -76,11 +76,11 @@
         $(document).ready(function () {
             
             function nuevaLinea(i){
-                var dom = `<div class="row">
+                var dom = `<div class="row entradas">
                 <div class="form-group col-md-6">
                     <input type="text" class="form-control" name="prod${i}" id="txtProducto" placeholder="Producto">
                 </div>
-                <div class="form-group col-md-1">
+                <div class="form-group col-md-2">
                     <input type="text" class="form-control validarNum" name="cant${i}" id="txtCant" placeholder="Cant">
                 </div>
                 <div class="form-group col-md-2">
@@ -91,7 +91,7 @@
                         <input type="text" class="form-control validarNum" name="unit${i}" id="txtUnitario" placeholder="Unitario" aria-label="Total" aria-describedby="basic-addon-unitario">
                     </div>
                 </div>
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-2">
                     <div class="input-group mb-3">
                         <div class="input-group-prepend">
                             <span class="input-group-text" id="basic-addon1">$</span>
@@ -113,7 +113,10 @@
             //VALIDACIONES
 
             $("div").on('keyup', 'input', function(){
-                
+                validar()
+            })
+
+            function validar(){
                 $("input").each(function( i, element ){
                     var valor = $(element).val()
                     if(valor == ""){
@@ -133,7 +136,7 @@
                 }else{
                     $("#btnEnviar").attr("disabled", true)
                 }
-            })
+            }
 
             $("div").on('keyup', '.validarNum', function(){
                 var parDiv = $(this).parents(".row")
@@ -150,6 +153,7 @@
                 dom = nuevaLinea(i)
                 $(".row:last").after(dom)
                 $("#btnEliminar").attr("disabled", false)
+                validar()
             }) 
 
             $("#btnEliminar").click(function(){
@@ -161,22 +165,37 @@
                 if(i==0){
                     $("#btnEliminar").attr("disabled", true)
                 }
+                validar()
             })   
 
-            function submitToAPI(e) {
-                e.preventDefault();
+            $("#btnEnviar").click(function(e) {
+                e.preventDefault()
                 var URL = "https://8slcpf2nkc.execute-api.us-east-1.amazonaws.com/prod/v1/presupuesto"
 
-                var name = $("#name-input").val();
-                var phone = $("#phone-input").val();
-                var email = $("#email-input").val();
-                var desc = $("#description-input").val();
+                var items =[]
+                console.log($(".entradas").length)
+                $(".entradas").each(function( i, element ){
+                    
+                    var cant = $(element).find("[id^=txtCant]").val()
+                    var unit = $(element).find("[id^=txtUnitario]").val()
+                    var prod = $(element).find("[id^=txtProducto]").val()
+                    var tot = $(element).find("[id^=txtTotal]").val()
+
+                    var presupuesto = {
+                    producto : prod,
+                    cantidad : cant,
+                    unitario : unit,
+                    total : tot
+                    }
+                    items.push(presupuesto)
+                })
+
                 var data = {
-                    name : name,
-                    phone : phone,
-                    email : email,
-                    desc : desc
-                    };
+                    mail: $("#txtMail").val(),
+                    presupuestos : items
+                }
+
+                console.log(JSON.stringify(data))
 
                 $.ajax({
                     type: "POST",
@@ -197,7 +216,7 @@
                         // show an error message
                         alert("UnSuccessfull");
                         }});
-                    }        
+                    })        
                 })
     </script>
   </body>
