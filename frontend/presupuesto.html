@@ -50,7 +50,7 @@
                         <input type="text" class="form-control validarNum" name="unit" id="txtUnitario" placeholder="Unitario" aria-label="Total" aria-describedby="basic-addon-unitario">
                     </div>
                 </div>
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-3 ult">
                     <div class="input-group mb-3">
                         <div class="input-group-prepend">
                             <span class="input-group-text" id="basic-addon1">$</span>
@@ -59,6 +59,8 @@
                     </div>
                 </div>
             </div>
+            <button id="btnAgregar" type="button" class="btn btn-primary"><strong>+</strong></button>
+            <button id="btnEliminar" type="button" class="btn btn-primary"><strong>-</strong></button>
             <button id="btnEnviar" type="submit" class="btn btn-primary">Enviar</button>
             </form>
     </div>
@@ -71,6 +73,38 @@
 
     <script type="text/javascript">
         $(document).ready(function () {
+            
+            function nuevaLinea(i){
+                var dom = `<div class="row">
+                <div class="form-group col-md-6">
+                    <input type="text" class="form-control" name="prod${i}" id="txtProducto" placeholder="Producto">
+                </div>
+                <div class="form-group col-md-1">
+                    <input type="text" class="form-control validarNum" name="cant${i}" id="txtCant" placeholder="Cant">
+                </div>
+                <div class="form-group col-md-2">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon-unitario">$</span>
+                        </div>
+                        <input type="text" class="form-control validarNum" name="unit${i}" id="txtUnitario" placeholder="Unitario" aria-label="Total" aria-describedby="basic-addon-unitario">
+                    </div>
+                </div>
+                <div class="form-group col-md-3">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon1">$</span>
+                        </div>
+                        <input type="text" class="form-control" name="total${i}" id="txtTotal" placeholder="Total" aria-label="Total" aria-describedby="basic-addon1" readonly>
+                    </div>
+                </div>
+            </div>`
+
+            return dom
+            }
+            
+            //FUNCIONES
+
             $(".validarNum").change(function () {
                 var err = false
                 $(".validarNum").each( function( i, element ) {
@@ -94,17 +128,20 @@
                     }
                 })
             })
+            var i = 0
+            $("#btnAgregar").click(function(){
+                i++
+                dom = nuevaLinea(i)
+                $(".row:last").after(dom)
+            }) 
+
+            $("#btnEliminar").click(function(){
+                if (i>0){
+                    $(".row:last").remove()
+                    i--
+                }
+            })            
         })
-
-
-        $.post($("#contact-us-form").attr('action'), JSON.stringify({
-                producto: $("#frmPresupuesto input[name='name']").val(),
-                cantidad: $("#frmPresupuesto input[name='email']").val(),
-                unitario: $("#frmPresupuesto input[name='phone']").val(),
-                total: $("#frmPresupuesto textarea[name='message']").val(),
-            }), function (data) {
-                $("#frmPresupuesto button").hide();
-            }, 'json');
     </script>
   </body>
 </html>
