@@ -1,7 +1,5 @@
-import boto3
 import logging
 import json
-from botocore.exceptions import ClientError
 from servicio import MailService
 
 logger = logging.getLogger()
