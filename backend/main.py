@@ -11,6 +11,10 @@ def handler(event, context):
     logger.info(f"EVENT: {str(event)}")
     
     return {
+            'headers': {
+                'Content-Type': 'application/json', 
+                'Access-Control-Allow-Origin': '*' 
+                }
             'statusCode': 200,
             'body': "mail enviado"
             }

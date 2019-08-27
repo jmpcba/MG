@@ -200,6 +200,7 @@
                 $.ajax({
                     type: "POST",
                     url : URL,
+                    headers: {  'Access-Control-Allow-Origin': '*'},
                     dataType: "json",
                     crossDomain: "true",
                     contentType: "application/json; charset=utf-8",
