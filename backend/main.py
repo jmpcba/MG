@@ -14,7 +14,7 @@ def handler(event, context):
             'headers': {
                 'Content-Type': 'application/json', 
                 'Access-Control-Allow-Origin': '*' 
-                }
+                },
             'statusCode': 200,
             'body': "mail enviado"
             }
