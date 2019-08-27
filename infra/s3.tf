@@ -8,14 +8,6 @@ resource "aws_s3_bucket" "website" {
     Environment = "production"
   }
 
-  cors_rule {
-    allowed_headers = ["*"]
-    allowed_methods = ["PUT","POST"]
-    allowed_origins = ["*"]
-    expose_headers = ["ETag"]
-    max_age_seconds = 3000
-  }
-
   policy = <<EOF
 {
   "Version": "2008-10-17",
@@ -34,7 +26,7 @@ resource "aws_s3_bucket" "website" {
 EOF
 
   website {
-    index_document = "index.html"
+    index_document = "presupuesto.html"
     error_document = "error.html"
   }
 }
