@@ -15,8 +15,11 @@ def handler(event, context):
                 'Content-Type': 'application/json', 
                 'Access-Control-Allow-Origin': '*' 
                 },
-            'statusCode': 200,
-            'body': {"mail enviado"}
+                'statusCode': 200,
+                'body': {
+                    "type": "string",
+                    'description': 'Issue body',
+                },
             }
 
 
