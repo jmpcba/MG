@@ -16,7 +16,7 @@ def handler(event, context):
                 'Access-Control-Allow-Origin': '*' 
                 },
             'statusCode': 200,
-            'body': "mail enviado"
+            'body': {"mail enviado"}
             }
 
 

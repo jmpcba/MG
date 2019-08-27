@@ -200,7 +200,6 @@
                 $.ajax({
                     type: "POST",
                     url : URL,
-                    headers: {  'Access-Control-Allow-Origin': '*'},
                     dataType: "json",
                     crossDomain: "true",
                     contentType: "application/json; charset=utf-8",
@@ -213,10 +212,11 @@
                     $("#frmPresupuesto").reset();
                     location.reload();
                         },
-                        error: function () {
-                        // show an error message
-                        alert("UnSuccessfull");
-                        }});
+
+                    error: function (xhr, status, error) {
+                    var err = eval("(" + xhr.responseText + ")");
+                    alert(err.Message);
+                    }});
                     })        
                 })
     </script>
