@@ -120,3 +120,4 @@ class MailService(Service):
             self.response.body = e
         else:
             self.response.code = 200
+            self.response.body = 'Mail Sent'
