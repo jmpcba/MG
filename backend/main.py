@@ -16,10 +16,7 @@ def handler(event, context):
                 'Access-Control-Allow-Origin': '*' 
                 },
                 'statusCode': 200,
-                'body': {
-                    "type": "string",
-                    'description': 'Issue body',
-                },
+                'body': 'cuerpo',
             }
 
 
