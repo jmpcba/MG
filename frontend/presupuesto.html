@@ -166,59 +166,18 @@
                     $("#btnEliminar").attr("disabled", true)
                 }
                 validar()
-            })   
+            })
+        })
 
-            $("#btnEnviar").click(function(e) {
-                e.preventDefault()
-                var URL = "https://8slcpf2nkc.execute-api.us-east-1.amazonaws.com/prod/v1/presupuesto"
-
-                var items =[]
-                console.log($(".entradas").length)
-                $(".entradas").each(function( i, element ){
-                    
-                    var cant = $(element).find("[id^=txtCant]").val()
-                    var unit = $(element).find("[id^=txtUnitario]").val()
-                    var prod = $(element).find("[id^=txtProducto]").val()
-                    var tot = $(element).find("[id^=txtTotal]").val()
-
-                    var presupuesto = {
-                    producto : prod,
-                    cantidad : cant,
-                    unitario : unit,
-                    total : tot
-                    }
-                    items.push(presupuesto)
-                })
-
-                var data = {
-                    mail: $("#txtMail").val(),
-                    presupuestos : items
-                }
-
-                console.log(JSON.stringify(data))
-
-                $.ajax({
-                    type: "POST",
-                    url : URL,
-                    dataType: "json",
-                    crossDomain: "true",
-                    contentType: "application/json; charset=utf-8",
-                    data: JSON.stringify(data),
-
-                    
-                    success: function () {
-                    // clear form and show a success message
-                    alert("Successfull");
-                    $("#frmPresupuesto").reset();
-                    location.reload();
-                        },
-
-                    error: function (xhr, status, error) {
-                    var err = eval("(" + xhr.responseText + ")");
-                    alert(err.Message);
-                    }});
-                    })        
-                })
     </script>
+        <script src="js/vendor/jquery-3.1.0.js"></script>
+        <script src="js/vendor/bootstrap.min.js"></script>
+        <script src="js/vendor/aws-cognito-sdk.min.js"></script>
+        <script src="js/vendor/amazon-cognito-identity.min.js"></script>
+        <script src="https://js.arcgis.com/4.3/"></script>
+        <script src="js/config.js"></script>
+        <script src="js/cognito-auth.js"></script>
+        <script src="js/esri-map.js"></script>
+        <script src="js/presupuesto.js"></script>
   </body>
 </html>
