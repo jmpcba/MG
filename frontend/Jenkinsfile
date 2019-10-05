@@ -12,13 +12,8 @@ node {
         echo "####################"
         echo "# UPLOADING TO AWS #"
         echo "####################"  
-            sh "apt-get install python3-venv"
             withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1') {
-            sh "python3 -m venv env"
-            sh """. env/bin/activate
-            python3 -m pip install --upgrade awscli
-            aws s3 sync frontend/ s3://jmpcba-mg-presupuesto
-            deactivate"""
+            s3Upload acl: 'Private', bucket: 'jmpcba-lambda', cacheControl: '', excludePathPattern: '', file: 'presupuesto.zip', includePathPattern: '', metadatas: [''], redirectLocation: '', sseAlgorithm: '', text: '', workingDir: ''
         }
     }
 }
