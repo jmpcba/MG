@@ -12,6 +12,7 @@ node {
         echo "####################"
         echo "# UPLOADING TO AWS #"
         echo "####################"  
+            sh "apt-get install python3-venv"
             withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1') {
             sh "python3 -m venv env"
             sh """. env/bin/activate
