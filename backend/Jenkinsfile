@@ -12,6 +12,7 @@ node {
         echo "#########################"
         echo "# BUILDING DEPENDENCIES #"
         echo "#########################"
+        sh "apt-get install python3-venv"
         sh "python3 -m venv env"
         sh """. env/bin/activate
         python3 -m pip install -r backend/requirements.txt
