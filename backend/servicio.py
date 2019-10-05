@@ -47,40 +47,33 @@ class Service:
 
 class MailService(Service):
     
-    def enviar(self):
+    def enviar(self, mail, presupuestos):
         # Replace sender@example.com with your "From" address.
         # This address must be verified with Amazon SES.
-        SENDER = "Sender Name <jmpcba@gmail.com>"
+        SENDER = "MG PLacas <jmpcba@gmail.com>"
 
         # Replace recipient@example.com with a "To" address. If your account 
         # is still in the sandbox, this address must be verified.
-        RECIPIENT = "jmpcba@gmail.com"
+        recipient = "jmpcba@gmail.com"
 
         # If necessary, replace us-west-2 with the AWS Region you're using for Amazon SES.
         AWS_REGION = "us-east-1"
 
         # The subject line for the email.
-        SUBJECT = "Amazon SES Test (SDK for Python)"
+        SUBJECT = "Presupuesto MG Placas Y Placares"
+
+        table = ''
+
+        for p in presupuestos:
+            table += f"<tr><td>{p['producto']}</td><td>{p['cantidad']}</td><td>{p['unitario']}</td><td>{p['total']}</td></tr>"
 
         # The email body for recipients with non-HTML email clients.
-        BODY_TEXT = ("Amazon SES Test (Python)\r\n"
-                    "This email was sent with Amazon SES using the "
-                    "AWS SDK for Python (Boto)."
-                    )
+        body_text = ''
+        with open('mail.html', 'r') as f:
+            body_text = f.read()
+        
+        body_text = body_text.replace('[TABLA]', presupuestos)
                     
-        # The HTML body of the email.
-        BODY_HTML = """<html>
-        <head></head>
-        <body>
-        <h1>Amazon SES Test (SDK for Python)</h1>
-        <p>This email was sent with
-            <a href='https://aws.amazon.com/ses/'>Amazon SES</a> using the
-            <a href='https://aws.amazon.com/sdk-for-python/'>
-            AWS SDK for Python (Boto)</a>.</p>
-        </body>
-        </html>
-                    """            
-
         # The character encoding for the email.
         CHARSET = "UTF-8"
 
@@ -93,18 +86,18 @@ class MailService(Service):
             response = client.send_email(
                 Destination={
                     'ToAddresses': [
-                        RECIPIENT,
+                        recipient,
                     ],
                 },
                 Message={
                     'Body': {
                         'Html': {
                             'Charset': CHARSET,
-                            'Data': BODY_HTML,
+                            'Data': body_text,
                         },
                         'Text': {
                             'Charset': CHARSET,
-                            'Data': BODY_TEXT,
+                            'Data': body_text,
                         },
                     },
                     'Subject': {
@@ -114,6 +107,7 @@ class MailService(Service):
                 },
                 Source=SENDER,
             )
+            print(response)
         # Display an error if something goes wrong.	
         except Exception as e:
             self.response.code = 403

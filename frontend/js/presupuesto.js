@@ -37,11 +37,14 @@ WildRydes.map = WildRydes.map || {};
             }
             items.push(presupuesto)
         })
-
+        
         var data = {
             mail: $("#txtMail").val(),
             presupuestos: items
         }
+
+        console.log(data)
+        console.log(items)
 
         $.ajax({
             type: "POST",
@@ -59,7 +62,7 @@ WildRydes.map = WildRydes.map || {};
                 // clear form and show a success message
                 alert("Presupuesto enviado a: " + data.mail);
                 $("#frmPresupuesto")[0].reset();
-                location.reload();
+                //location.reload();
             },
 
             error: function (xhr, status, error) {

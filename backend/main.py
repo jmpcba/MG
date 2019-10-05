@@ -9,7 +9,10 @@ def handler(event, context):
     logger.info("INICIO")
     logger.info(f"EVENT: {str(event)}")
 
+    body = event['body']
+    body = json.loads(body)
+
     mail = MailService()
-    mail.enviar()
+    mail.enviar(body['mail'], body['presupuestos'])
     
     return mail.response.service_response
