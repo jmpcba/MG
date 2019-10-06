@@ -13,7 +13,7 @@ node {
         echo "# UPLOADING TO AWS #"
         echo "####################"  
             withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1') {
-            s3Upload acl: 'Private', includePathPattern:'**/*', bucket: 'jmpcba-mg-presupuesto', workingDir: 'frontend'
+            s3Upload acl: 'PublicReadWrite', includePathPattern:'**/*', bucket: 'jmpcba-mg-presupuesto', workingDir: 'frontend'
         }
     }
 }

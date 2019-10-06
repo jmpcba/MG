@@ -29,6 +29,7 @@ node {
         echo "# UPLOADING TO AWS #"
         echo "####################"  
             withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1') {
+                s3Upload acl: 'Private', file:'presupuesto.zip', bucket: 'jmpcba-lambda', workingDir: 'backend'
             sh """. env/bin/activate
             python3 -m pip install --upgrade awscli
             aws s3 cp presupuesto.zip s3://jmpcba-lambda/presupuesto.zip
