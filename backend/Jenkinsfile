@@ -1,6 +1,10 @@
 
 def sitePackageDir = "env/lib/python3.6/site-packages"
 node {
+    stage('Initialize'){
+        def dockerHome = tool 'myDocker'
+        env.PATH = "${dockerHome}/bin:${env.PATH}"
+    }
     docker.image('python').inside{
         stage('Clean Up'){
             cleanWs()
