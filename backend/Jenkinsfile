@@ -19,8 +19,9 @@ node {
             
             sh "cp backend/* ${sitePackageDir}"
             dir(sitePackageDir){
-                sh "zip -qr9 presupuesto.zip ."
-                sh "mv presupuesto.zip ${WORKSPACE}"
+                sh """zip -qr9 presupuesto.zip .
+                mv presupuesto.zip ${WORKSPACE}
+                chmod 755 presupuesto.zip"""
             }
         }
     }

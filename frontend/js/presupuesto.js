@@ -8,6 +8,7 @@ WildRydes.map = WildRydes.map || {};
     WildRydes.authToken.then(function setAuthToken(token) {
         if (token) {
             authToken = token;
+            console.log(token)
         } else {
             window.location.href = '/signin.html';
         }
