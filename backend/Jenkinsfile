@@ -1,19 +1,15 @@
 
 def sitePackageDir = "env/lib/python3.6/site-packages"
 node {
-    stage('Initialize'){
-        def dockerHome = tool 'myDocker'
-        env.PATH = "${dockerHome}/bin:${env.PATH}"
+    stage('Clean Up'){
+        cleanWs()
     }
-    docker.image('python').inside{
-        stage('Clean Up'){
-            cleanWs()
-        }
-        stage('Clone'){
-            git credentialsId: 'GIT', url: 'https://github.com/jmpcba/MG.git'
-        }
+    stage('Clone'){
+        git credentialsId: 'GIT', url: 'https://github.com/jmpcba/MG.git'
+    }
 
-        stage('Build') { 
+    stage("build") {
+        dir("${WORKSPACE}") {
             echo "#########################"
             echo "# BUILDING DEPENDENCIES #"
             echo "#########################"
@@ -28,8 +24,10 @@ node {
                 sh "mv presupuesto.zip ${WORKSPACE}"
             }
         }
+    }
 
-        stage('Deploy') {
+    stage('Deploy') {
+        dir("${WORKSPACE}"){
             echo "####################"
             echo "# UPLOADING TO AWS #"
             echo "####################"  
