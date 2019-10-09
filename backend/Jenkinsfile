@@ -15,8 +15,7 @@ node {
             echo "#########################"
             sh "python3 -m venv env"
             sh """. env/bin/activate
-            python3 -m pip install -r backend/requirements.txt
-            deactivate"""
+            python3 -m pip install -r backend/requirements.txt"""
             
             sh "cp backend/* ${sitePackageDir}"
             dir(sitePackageDir){
