@@ -33,10 +33,10 @@ node {
             echo "# UPLOADING TO AWS #"
             echo "####################"  
                 withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1') {
-                    s3Upload acl: 'Private', file:'presupuesto.zip', bucket: 'jmpcba-lambda', workingDir: ''
-                sh """. env/bin/activate
-                aws lambda update-function-code --function-name mg_presupuesto --s3-bucket jmpcba-lambda --s3-key presupuesto.zip
-                deactivate"""
+                    sh """. env/bin/activate
+                    aws s3 cp presupuesto.zip s3://jmpcba-lambda/presupuesto.zip
+                    aws lambda update-function-code --function-name mg_presupuesto --s3-bucket jmpcba-lambda --s3-key presupuesto.zip
+                    deactivate"""
             }
         }
     }
