@@ -1,6 +1,8 @@
 node {
     stage('Clone'){
         git credentialsId: 'GIT', url: 'https://github.com/jmpcba/MG.git'
+        def tfHome = tool name: ‘Terraform’
+        env.PATH = “${tfHome}:${env.PATH}”
     }
 
     if (params.PLAN){
