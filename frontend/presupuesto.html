@@ -134,8 +134,18 @@
                         }
                 })
 
+                var txtMail = $("#txtMail")
+                var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/
+                
+                if (!regex.test(txtMail.val())){
+                    txtMail.addClass("is-invalid")
+                    txtMail.removeClass("is-valid")
+                }
+
                 if($(".is-invalid").length == 0){
                     $("#btnEnviar").attr("disabled", false)
+                }else if($(".invalid").length != 0){
+                    $("#btnEnviar").attr("disabled", true)
                 }else{
                     $("#btnEnviar").attr("disabled", true)
                 }
