@@ -51,7 +51,8 @@ WildRydes.map = WildRydes.map || {};
             type: "POST",
             url: URL,
             headers: {
-                Authorization: authToken
+                'Access-Control-Allow-Origin': '*',
+                Authorization: authToken,
             },
             dataType: "json",
             crossDomain: "true",

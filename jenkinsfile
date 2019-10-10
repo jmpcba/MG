@@ -1,0 +1,458 @@
+import groovy.json.JsonSlurper
+import java.text.SimpleDateFormat
+
+node('dockerinsideaacorn') {
+
+	try {
+
+		wrap([$class: 'ConfigFileBuildWrapper', managedFiles: [[fileId: 'CommonFunctions', replaceTokens: false, targetLocation: 'CommonFunctionsForPipeline', variable: 'CommonFunctionsForPipeline']]]) {
+
+			def commonFunctions = load "${env.CommonFunctionsForPipeline}"
+			def userName = commonFunctions.getUserName()
+			def antHome = tool 'Ant196'
+			def appName = "AACoRN"
+			
+			//GitHub token repo and branch
+			def credID = 'aacorn_Git_Credentials'
+			def gitURL = 'https://ghe.aa.com/aacorn/AACoRN.git'
+			
+			//Sonar Login token
+			def SONAR_AUTH_TOKEN = '72585020005975ee62beacc0dcbb68ac4aac7d17'
+			
+			//Nexus IQ stage
+			def nexusIQStage = 'build'
+			
+			def environ = "${env.ENVIRONMENT}".toUpperCase()
+			
+			def branch="${env.BRANCH}".toUpperCase()
+			branch = branch.trim()
+			def RELEASE_NAME = branch
+			
+			if (branch.endsWith("_QA")){
+				def RELEASE_NAME = branch.replaceAll("_QA","")
+			}else if (branch.endsWith("_DEV")){
+				def RELEASE_NAME = branch.replaceAll("_DEV","")
+			}
+			
+			stage('Checkout') {
+				echo "*****Checkout code*****"	
+				//Delete everything in workspace to start fresh
+				deleteDir()
+				//Checkout the code
+				echo "${env.BRANCH}"
+				git branch: "${env.BRANCH}", credentialsId: "${credID}", url: "${gitURL}"
+			}
+			//DEV BUILD INSTALLATION
+			if (environ.equalsIgnoreCase("DEV")){
+				//for DEV defines the version based on date and job run run number
+				def dateFormat = new SimpleDateFormat("yyyyMMdd")
+				def date = new Date()
+				date = dateFormat.format(date)
+				def VERSION = date+"${env.BUILD_NUMBER}"
+			
+				//JVM where to install the app
+				def JVM = 'WebSphere:cell=AACoRNQACell,cluster=AACoRNQACluster'
+			
+				//Script for Dev Build and Deployment			
+				stage ('Build') {
+					echo "*******Build and Deployment for DEV environment"
+					sh 'cp -r ant-contrib-1.0b3.jar /usr/local/apache-ant-1.9.6/lib'
+					//Commented out cause Nexus 3 now support anonymous image pull
+					withCredentials([usernamePassword(credentialsId: 'Nexus3_Docker_Pull', passwordVariable: 'password', usernameVariable: 'username')]) {
+						withEnv([
+								'JAVA_HOME=/opt/IBM/WebSphere/AppServer/java',
+								'WAS_HOME=/opt/IBM/WebSphere/AppServer',
+								'JAVA_TOOL_OPTIONS=-Dfile.encoding=iso-8859-1',
+								'USER_INSTALL_ROOT=/opt/IBM/WebSphere/AppServer/profiles/WAS_Profile',
+								'PATH=/opt/IBM/WebSphere/AppServer/java/bin:/opt/IBM/WebSphere/AppServer/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/IBM/WebSphere/AppServer/profiles/WAS_Profile',
+								'ANT_OPTS=-Xms2048m -Xmx4096m'
+							]) {
+
+								//Start container and run build inside
+								docker.image('nexushdq.aa.com:18445/ibm/websphere:was85512ant196_3').inside {
+
+									sh "java -version"
+									sh "ant -lib ./ -Dbuild.env ${env.ENVIRONMENT} -Dbuild.ver ${VERSION} -Daacorn.env ${env.ENVIRONMENT} -Drelease.environment ${env.ENVIRONMENT} -Daacorn.ver ${VERSION} -Dskip.notify true -Daacorn.rel ${RELEASE_NAME} -Daacorn.deploy second -Dbuild.rel ${RELEASE_NAME} -Duser.property.file=${WORKSPACE}/build_deploy/build-dev-was85.properties  generateArtifacts"
+
+									archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/aacornEar/*.ear', fingerprint: true
+									archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/nad/**', defaultExcludes: false, fingerprint: true
+
+									stash includes: 'dist/aacornEar/*.ear', name: 'artifacts'
+									stash includes: 'build_deploy/*.py', name: 'jython'
+									
+									jacoco classPattern: '**/build/aacornEjb,**/build/nad', exclusionPattern: '**/*Test.class', sourcePattern: '**/src'
+							}
+						}
+					}
+				}
+				
+				stage('Nexus IQ Component Scan') {
+				
+					//slackSend channel: "${slackChannel}", teamDomain: "${slackDomain}", token: "${slackToken}", message:"Nexus IQ scan - Started ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
+					
+					echo "*****Nexus IQ server component Scan*****"
+					dir ('dist'){
+						sh "java -Djava.net.useSystemProxies=false -jar /opt/apps/clm/scanner/nexus-iq-cli-1.19.0.jar -i ${appName} -s ${env.NexusIQServer} -r ${appName}.json **/"
+					}				
+				}
+				
+				stage ('Nexus Upload'){
+					//slackSend channel: "${slackChannel}", teamDomain: "${slackDomain}", token: "${slackToken}", message:"Nexus Upload - Started ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
+					
+					dir ('dist/aacornEar'){
+						sh "curl -v -u Hs5NtOvR:ZErA6UzYkr6VMqWUQGj/8aLtHoOVp6AT7icYObmqhF59 --upload-file aacorn-${RELEASE_NAME}_${VERSION}.ear ${env.NexusServer}/nexus/content/repositories/AACoRN-snapshots/com/aa/${appName}/DEV/${RELEASE_NAME}_${VERSION}/aacorn-${RELEASE_NAME}_${VERSION}.ear"
+					}
+					dir ('dist'){
+						sh "tar -zcvf nad.tar.gz nad"
+						sh "curl -v -u Hs5NtOvR:ZErA6UzYkr6VMqWUQGj/8aLtHoOVp6AT7icYObmqhF59 --upload-file nad.tar.gz ${env.NexusServer}/nexus/content/repositories/AACoRN-snapshots/com/aa/${appName}/DEV/${RELEASE_NAME}_${VERSION}/nad_${RELEASE_NAME}_${VERSION}.tar.gz"
+					}
+				}
+				
+				stage ("WAS deployment"){
+				
+					node ('DeployCDCStage'){
+						
+						unstash "artifacts"
+						unstash "jython"
+						
+						sshagent(['AACorn-Ssh-Key']) {
+							
+							String PATH = "/opt/IBM/AACoRN_WebSphere85/profiles/Rsappd50/bin/"
+							String server = "10.83.216.230"
+	  
+							sh "ssh -o stricthostkeychecking=no aa860870@10.83.216.230 'cd /tmp; mkdir -p ${RELEASE_NAME}_${VERSION}'"
+
+							echo "*********Deploy Jars and jython files in Server (10.83.216.230)**********"	
+							sh "scp -o stricthostkeychecking=no -r build_deploy/installAAcorn.py aa860870@10.83.216.230:/tmp/${RELEASE_NAME}_${VERSION}"
+							sh "scp -o stricthostkeychecking=no -r build_deploy/InstallClass.py aa860870@10.83.216.230:/tmp/${RELEASE_NAME}_${VERSION}"
+							sh "scp -o stricthostkeychecking=no -r dist/aacornEar/aacorn-${RELEASE_NAME}_${VERSION}.ear aa860870@10.83.216.230:/tmp/${RELEASE_NAME}_${VERSION}"
+
+							echo "*********Script running in Server (10.83.216.230)**********"	
+							sh "ssh -o stricthostkeychecking=no aa860870@10.83.216.230 'cd ${PATH}; sh wsadmin.sh -lang jython -f /tmp/${RELEASE_NAME}_${VERSION}/installAAcorn.py ${RELEASE_NAME}_${VERSION} ${JVM} /tmp/${RELEASE_NAME}_${VERSION}/aacorn-${RELEASE_NAME}_${VERSION}.ear /tmp/${RELEASE_NAME}_${VERSION}/'"
+							
+							echo "*********Deleting artifact from /tmp forlder in WAS************"
+							sh "ssh -o stricthostkeychecking=no aa860870@10.83.216.230 'rm -rf /tmp/${RELEASE_NAME}_${VERSION}/aacorn-${RELEASE_NAME}_${VERSION}.ear'"
+						}
+					}
+				}
+				
+				stage ("Windows Deployment"){
+				
+					sshagent(['AACorn-Ssh-Key']) {
+					
+						sh "mkdir ${RELEASE_NAME}_${VERSION}"
+						sh "cp -Rf dist/nad/ ${RELEASE_NAME}_${VERSION}/aacorn_client"
+						
+						echo "**********Deploy nad folder in Server (rswebd84.qcorpaa.aa.com)*************"
+						sh "scp -o stricthostkeychecking=no -pqr ${RELEASE_NAME}_${VERSION} 297547@QCORPAA@10.62.99.225:/D:/ResApps/prodbase/x86/devReleases/"
+						
+						
+						echo "*********Update Appman.xml*************"
+						sh "scp -o stricthostkeychecking=no -pqr 297547@QCORPAA@10.62.99.225:/D:/ResApps/prodbase/x86/appman/appman.xml /tmp/"
+						dir ('build_deploy'){
+							sh "python2.7 update_appman.py ${env.ENVIRONMENT} ${VERSION} ${RELEASE_NAME}"
+							sh "scp -o stricthostkeychecking=no -pqr /tmp/appman.xml/ 297547@QCORPAA@10.62.99.225:/D:/ResApps/prodbase/x86/appman/"
+							sh "scp -o stricthostkeychecking=no -pqr /tmp/appman${VERSION}.xml/ 297547@QCORPAA@10.62.99.225:/D:/ResApps/prodbase/x86/appman/"
+						}
+						echo "*********Update Appman.xml completed*************"
+						sh "rm -rf /tmp/appman${VERSION}.xml"
+						sh 'rm -rf /tmp/appman.xml'
+						
+						stash includes: "${RELEASE_NAME}_${VERSION}/aacorn_client/**", name: 'nad'
+						stash includes: 'build_deploy/update_appman.py', name:'update_appman.py'
+						stash includes: 'build_deploy/build-dev-was85.properties', name:'build-dev-was85.properties'
+					}
+					
+					node ('DeployCDCStage'){
+						
+						unstash "nad"
+						unstash "update_appman.py"
+						unstash "build-dev-was85.properties"
+						
+						sshagent(['AACorn-Ssh-Key']) {
+						
+							echo "**********Deploy nad folder in Server (rswebd60.corpaa.aa.com)*************"
+							sh "scp -o stricthostkeychecking=no -pqr ${RELEASE_NAME}_${VERSION} 297547@CORPAA@rswebd60.corpaa.aa.com:/D:/ResApps/prodbase/x86/devReleases/"
+							
+							echo "*********Update Appman.xml*************"
+							sh "scp -o stricthostkeychecking=no -pqr 297547@CORPAA@rswebd60.corpaa.aa.com:/D:/ResApps/prodbase/x86/appman/appman.xml /tmp/"
+							dir ('build_deploy'){
+								sh "python2.7 update_appman.py ${env.ENVIRONMENT} ${VERSION} ${RELEASE_NAME}"
+								sh "scp -o stricthostkeychecking=no -pqr /tmp/appman.xml/ 297547@CORPAA@rswebd60.corpaa.aa.com:/D:/ResApps/prodbase/x86/appman/"
+								sh "scp -o stricthostkeychecking=no -pqr /tmp/appman${VERSION}.xml/ 297547@CORPAA@rswebd60.corpaa.aa.com:/D:/ResApps/prodbase/x86/appman/"
+							}
+							echo "*********Update Appman.xml completed*************"
+							sh "rm -rf /tmp/appman${VERSION}.xml"
+							sh 'rm -rf /tmp/appman.xml'
+						}
+					}
+				}
+			}
+			//CERT BUILD INSTALLATION
+			else if (environ.equalsIgnoreCase("CERT")){
+				def JVM = 'WebSphere:cell=AACoRNCertCell,cluster=AACoRNCertCluster'
+				def VERSION = env.VERSION
+				VERSION = VERSION.trim()
+				
+				//Script for Cert Build and Deployment			
+				stage ('CDC_Build') {
+					
+					echo "*******Build and Deployment for CERT environment"
+					sh 'cp -r ant-contrib-1.0b3.jar /usr/local/apache-ant-1.9.6/lib'
+					//Commented out cause Nexus 3 now support anonymous image pull
+					withCredentials([usernamePassword(credentialsId: 'Nexus3_Docker_Pull', passwordVariable: 'password', usernameVariable: 'username')]) {
+						withEnv([
+								'JAVA_HOME=/opt/IBM/WebSphere/AppServer/java',
+								'WAS_HOME=/opt/IBM/WebSphere/AppServer',
+								'JAVA_TOOL_OPTIONS=-Dfile.encoding=iso-8859-1',
+								'USER_INSTALL_ROOT=/opt/IBM/WebSphere/AppServer/profiles/WAS_Profile',
+								'PATH=/opt/IBM/WebSphere/AppServer/java/bin:/opt/IBM/WebSphere/AppServer/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/IBM/WebSphere/AppServer/profiles/WAS_Profile',
+								'ANT_OPTS=-Xms2048m -Xmx4096m'
+							]) {
+
+								//Start container and run build inside
+								docker.image('nexushdq.aa.com:18445/ibm/websphere:was85512ant196_3').inside {
+
+								sh "java -version"
+								sh "ant -lib ./ -Dbuild.env ${env.ENVIRONMENT} -Dbuild.ver ${VERSION} -Daacorn.env ${env.ENVIRONMENT} -Drelease.environment ${env.ENVIRONMENT} -Daacorn.ver ${VERSION} -Dskip.notify true -Daacorn.rel MAINT -Daacorn.deploy first -Ddeploy.datacenter CDC -Dfailonerror true -Duser.property.file=${WORKSPACE}/build_deploy/build-cert_cdc-was85.properties generateArtifacts"
+
+								archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/aacornEar/*.ear', fingerprint: true
+								archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/nad/**', defaultExcludes: false, fingerprint: true
+
+								stash includes: 'dist/aacornEar/*.ear', name: 'artifacts'
+								stash includes: 'build_deploy/*.py', name: 'jython'
+								
+								jacoco classPattern: '**/build/aacornEjb,**/build/nad', exclusionPattern: '**/*Test.class', sourcePattern: '**/src'
+							}
+						}
+					}
+				}
+				
+				stage('CDC_Nexus IQ Component Scan') {
+				
+					//slackSend channel: "${slackChannel}", teamDomain: "${slackDomain}", token: "${slackToken}", message:"Nexus IQ scan - Started ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
+					
+					echo "*****Nexus IQ server component Scan*****"
+					dir ('dist'){
+						sh "java -Djava.net.useSystemProxies=false -jar /opt/apps/clm/scanner/nexus-iq-cli-1.19.0.jar -i ${appName} -s ${env.NexusIQServer} -r ${appName}.json **/"
+					}				
+				}
+				
+				stage ('CDC_Nexus Upload'){
+					//slackSend channel: "${slackChannel}", teamDomain: "${slackDomain}", token: "${slackToken}", message:"Nexus Upload - Started ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
+					
+					dir ('dist/aacornEar'){
+						sh "curl -v -u Hs5NtOvR:ZErA6UzYkr6VMqWUQGj/8aLtHoOVp6AT7icYObmqhF59 --upload-file aacorn-MAINT_${VERSION}.ear ${env.NexusServer}/nexus/content/repositories/AACoRN-snapshots/com/aa/${appName}/CERT/${RELEASE_NAME}_${VERSION}/CDC/aacorn-MAINT_${VERSION}.ear"
+					}
+					dir ('dist'){
+						sh "tar -zcvf nad.tar.gz nad"
+						sh "curl -v -u Hs5NtOvR:ZErA6UzYkr6VMqWUQGj/8aLtHoOVp6AT7icYObmqhF59 --upload-file nad.tar.gz ${env.NexusServer}/nexus/content/repositories/AACoRN-snapshots/com/aa/${appName}/CERT/${RELEASE_NAME}_${VERSION}/CDC/nad_${RELEASE_NAME}_${VERSION}.tar.gz"
+					}
+				}
+				
+				stage ("CDC_WAS deployment"){
+				
+					node ('DeployCDCStage'){
+						
+						unstash "artifacts"
+						unstash "jython"
+						
+						sshagent(['AACorn-Ssh-Key']) {
+	  
+							sh "ssh -o stricthostkeychecking=no ed858061@rsappc122.tul.aa.com 'cd /tmp; mkdir -p ${RELEASE_NAME}_${VERSION}'"
+
+							echo "*********Deploy Jars and jython files in Server (rsappc122.tul.aa.com)**********"	
+							sh "scp -o stricthostkeychecking=no -r build_deploy/installAAcorn.py ed858061@rsappc122.tul.aa.com:/tmp/${RELEASE_NAME}_${VERSION}"
+							sh "scp -o stricthostkeychecking=no -r build_deploy/InstallClass.py ed858061@rsappc122.tul.aa.com:/tmp/${RELEASE_NAME}_${VERSION}"
+							sh "scp -o stricthostkeychecking=no -r dist/aacornEar/aacorn-MAINT_${VERSION}.ear ed858061@rsappc122.tul.aa.com:/tmp/${RELEASE_NAME}_${VERSION}"
+
+							echo "*********Script running in Server (rsappc122.tul.aa.com)**********"	
+							sh "ssh -o stricthostkeychecking=no ed858061@rsappc122.tul.aa.com 'cd /opt/IBM/AACoRN_WebSphere85/profiles/RSAppC122/bin; sh wsadmin.sh -lang jython -f /tmp/${RELEASE_NAME}_${VERSION}/installAAcorn.py MAINT_${VERSION} ${JVM} /tmp/${RELEASE_NAME}_${VERSION}/aacorn-MAINT_${VERSION}.ear /tmp/${RELEASE_NAME}_${VERSION}/'"
+							
+							echo "*********Deleting artifact from /tmp folder in WAS************"
+							sh "ssh -o stricthostkeychecking=no ed858061@rsappc122.tul.aa.com 'rm -rf /tmp/${RELEASE_NAME}_${VERSION}/aacorn-MAINT_${VERSION}.ear'"
+						}
+					}
+				}
+				
+				stage ('PDC_Build') {
+					echo "*******Build and Deployment for CERT environment"
+					sh 'cp -r ant-contrib-1.0b3.jar /usr/local/apache-ant-1.9.6/lib'
+					//Commented out cause Nexus 3 now support anonymous image pull
+					withCredentials([usernamePassword(credentialsId: 'Nexus3_Docker_Pull', passwordVariable: 'password', usernameVariable: 'username')]) {
+						withEnv([
+								'JAVA_HOME=/opt/IBM/WebSphere/AppServer/java',
+								'WAS_HOME=/opt/IBM/WebSphere/AppServer',
+								'JAVA_TOOL_OPTIONS=-Dfile.encoding=iso-8859-1',
+								'USER_INSTALL_ROOT=/opt/IBM/WebSphere/AppServer/profiles/WAS_Profile',
+								'PATH=/opt/IBM/WebSphere/AppServer/java/bin:/opt/IBM/WebSphere/AppServer/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/IBM/WebSphere/AppServer/profiles/WAS_Profile',
+								'ANT_OPTS=-Xms2048m -Xmx4096m'
+							]) {
+
+								//Start container and run build inside
+								docker.image('nexushdq.aa.com:18445/ibm/websphere:was85512ant196_3').inside {
+
+								sh "java -version"
+								sh "ant -lib ./ -Dbuild.env ${env.ENVIRONMENT} -Dbuild.ver ${VERSION} -Daacorn.env ${env.ENVIRONMENT} -Drelease.environment ${env.ENVIRONMENT} -Daacorn.ver ${VERSION} -Dskip.notify true -Daacorn.rel MAINT -Daacorn.deploy first -Ddeploy.datacenter PDC -Dfailonerror true -Duser.property.file=${WORKSPACE}/build_deploy/build-cert_pdc-was85.properties generateArtifacts"
+
+								archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/aacornEar/*.ear', fingerprint: true
+								archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/nad/**', defaultExcludes: false, fingerprint: true
+
+								stash includes: 'dist/aacornEar/*.ear', name: 'artifacts'
+								stash includes: 'build_deploy/*.py', name: 'jython'
+							}
+						}
+					}
+				}
+				
+				stage('PDC_Nexus IQ Component Scan') {
+				
+					//slackSend channel: "${slackChannel}", teamDomain: "${slackDomain}", token: "${slackToken}", message:"Nexus IQ scan - Started ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
+					
+					echo "*****Nexus IQ server component Scan*****"
+					dir ('dist'){
+						sh "java -Djava.net.useSystemProxies=false -jar /opt/apps/clm/scanner/nexus-iq-cli-1.19.0.jar -i ${appName} -s ${env.NexusIQServer} -r ${appName}.json **/"
+					}				
+				}
+				
+				stage ('PDC_Nexus Upload'){
+					//slackSend channel: "${slackChannel}", teamDomain: "${slackDomain}", token: "${slackToken}", message:"Nexus Upload - Started ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
+					
+					dir ('dist/aacornEar'){
+						sh "curl -v -u Hs5NtOvR:ZErA6UzYkr6VMqWUQGj/8aLtHoOVp6AT7icYObmqhF59 --upload-file aacorn-MAINT_${VERSION}.ear ${env.NexusServer}/nexus/content/repositories/AACoRN-snapshots/com/aa/${appName}/CERT/${RELEASE_NAME}_${VERSION}/PDC/aacorn-MAINT_${VERSION}.ear"
+					}
+					dir ('dist'){
+						sh "tar -zcvf nad.tar.gz nad"
+						sh "curl -v -u Hs5NtOvR:ZErA6UzYkr6VMqWUQGj/8aLtHoOVp6AT7icYObmqhF59 --upload-file nad.tar.gz ${env.NexusServer}/nexus/content/repositories/AACoRN-snapshots/com/aa/${appName}/CERT/${RELEASE_NAME}_${VERSION}/PDC/nad_${RELEASE_NAME}_${VERSION}.tar.gz"
+					}
+				}
+				
+				stage ("PDC_WAS deployment"){
+				
+					node ('DeployPDCStage'){
+						
+						unstash "artifacts"
+						unstash "jython"
+						
+						sshagent(['AACorn-Ssh-Key']) {
+	  
+							sh "ssh -o stricthostkeychecking=no ed858061@rsappc112.pdc.aa.com 'cd /tmp; mkdir -p ${RELEASE_NAME}_${VERSION}'"
+
+							echo "*********Deploy Jars and jython files in Server (rsappc112.pdc.aa.com)**********"	
+							sh "scp -o stricthostkeychecking=no -r build_deploy/installAAcorn.py ed858061@rsappc112.pdc.aa.com:/tmp/${RELEASE_NAME}_${VERSION}"
+							sh "scp -o stricthostkeychecking=no -r build_deploy/InstallClass.py ed858061@rsappc112.pdc.aa.com:/tmp/${RELEASE_NAME}_${VERSION}"
+							sh "scp -o stricthostkeychecking=no -r dist/aacornEar/aacorn-MAINT_${VERSION}.ear ed858061@rsappc112.pdc.aa.com:/tmp/${RELEASE_NAME}_${VERSION}"
+
+							echo "*********Script running in Server (rsappc112.pdc.aa.com)**********"	
+							sh "ssh -o stricthostkeychecking=no ed858061@rsappc112.pdc.aa.com 'cd /opt/IBM/AACoRN_WebSphere85/profiles/RSAppC112/bin; sh wsadmin.sh -lang jython -f /tmp/${RELEASE_NAME}_${VERSION}/installAAcorn.py MAINT_${VERSION} ${JVM} /tmp/${RELEASE_NAME}_${VERSION}/aacorn-MAINT_${VERSION}.ear /tmp/${RELEASE_NAME}_${VERSION}/'"
+							
+							echo "*********Deleting artifact from /tmp folder in WAS************"
+							sh "ssh -o stricthostkeychecking=no ed858061@rsappc112.pdc.aa.com 'rm -rf /tmp/${RELEASE_NAME}_${VERSION}/aacorn-MAINT_${VERSION}.ear'"
+						}
+					}
+				}
+				
+				stage ("Windows Deployment"){
+					
+					def dateFormat = new SimpleDateFormat("yyyyMMdd")
+					def date = new Date()
+					date = dateFormat.format(date)
+					def appmanBackup = "appman${date}${env.BUILD_NUMBER}.xml" 
+					
+					sshagent(['AACorn-Ssh-Key']) {
+					
+						sh "mkdir ${VERSION}"
+						sh "cp -Rf dist/nad/* ${VERSION}"
+						
+						echo "**********Deploy nad folder in Server (rswebd84.qcorpaa.aa.com)*************"
+						sh "scp -o stricthostkeychecking=no -pqr ${VERSION} 297547@QCORPAA@10.62.99.225:/D:/ResApps/prodbase/x86/aacorn/"
+						
+						
+						echo "*********Update Appman.xml*************"
+						sh "scp -o stricthostkeychecking=no -pqr 297547@QCORPAA@10.62.99.225:/D:/ResApps/prodbase/x86/appman/appman.xml /tmp/"
+						dir ('build_deploy'){
+							sh "python2.7 update_appman.py ${env.ENVIRONMENT} ${VERSION} ${RELEASE_NAME}"
+							sh "scp -o stricthostkeychecking=no -pqr /tmp/appman.xml/ 297547@QCORPAA@10.62.99.225:/D:/ResApps/prodbase/x86/appman/"
+							
+							try{
+							sh "scp -o stricthostkeychecking=no -pqr /tmp/${appmanBackup}/ 297547@QCORPAA@10.62.99.225:/D:/ResApps/prodbase/x86/appman/"
+							}
+							
+							catch (err){
+								echo "ERROR coping Appman backup file: ${err}"
+							}
+						}
+						echo "*********Update Appman.xml completed*************"
+						sh "rm -rf /tmp/${appmanBackup}"
+						sh 'rm -rf /tmp/appman.xml'
+						
+						stash includes: "${VERSION}/**", name: 'nad'
+						stash includes: 'build_deploy/update_appman.py', name:'update_appman.py'
+						stash includes: 'build_deploy/build-cert_pdc-was85.properties', name:'build-cert_pdc-was85.properties'
+						stash includes: 'build_deploy/build-cert_cdc-was85.properties', name:'build-cert_cdc-was85.properties'
+					}
+					
+					node ('DeployCDCStage'){
+						
+						unstash "nad"
+						unstash "update_appman.py"
+						unstash "build-cert_pdc-was85.properties"
+						unstash "build-cert_cdc-was85.properties"
+						
+						sshagent(['AACorn-Ssh-Key']) {
+						
+							echo "**********Deploy nad folder in Server (rswebd60.corpaa.aa.com)*************"
+							sh "scp -o stricthostkeychecking=no -pqr ${VERSION} 297547@CORPAA@rswebd60.corpaa.aa.com:/D:/ResApps/prodbase/x86/aacorn/"
+							
+							echo "*********Update Appman.xml*************"
+							sh "scp -o stricthostkeychecking=no -pqr 297547@CORPAA@rswebd60.corpaa.aa.com:/D:/ResApps/prodbase/x86/appman/appman.xml /tmp/"
+							dir ('build_deploy'){
+								sh "python2.7 update_appman.py ${env.ENVIRONMENT} ${VERSION} ${RELEASE_NAME}"
+								sh "scp -o stricthostkeychecking=no -pqr /tmp/appman.xml/ 297547@CORPAA@rswebd60.corpaa.aa.com:/D:/ResApps/prodbase/x86/appman/"
+								
+								try{
+									sh "scp -o stricthostkeychecking=no -pqr /tmp/${appmanBackup}/ 297547@CORPAA@rswebd60.corpaa.aa.com:/D:/ResApps/prodbase/x86/appman/"
+								}
+								catch (err){
+									echo "ERROR coping Appman backup file: ${err}"
+								}
+							}
+							echo "*********Update Appman.xml completed*************"
+							sh "rm -rf /tmp/${appmanBackup}"
+							sh 'rm -rf /tmp/appman.xml'
+						}
+					}
+				}
+				
+			    stage('Trigger ALM'){
+					echo "*****Trigger ALM job*****"
+					def build_type = "${env.OFC_BUILD}"
+					if (build_type.equalsIgnoreCase("true")){
+						triggerRemoteJob parameterFactories: [[$class: 'SimpleString', name: 'RELEASE', value: "${RELEASE_NAME}"]], remotePathMissing: [$class: 'ContinueAsIs'], remotePathUrl: 'jenkins://fc77c055e40afd4043cf1b0f5fd31071/AA-DevOps/AACoRN/Trigger_Remote_Job_OFC'
+					}
+					else {
+						triggerRemoteJob parameterFactories: [[$class: 'SimpleString', name: 'RELEASE', value: "${RELEASE_NAME}"]], remotePathMissing: [$class: 'ContinueAsIs'], remotePathUrl: 'jenkins://fc77c055e40afd4043cf1b0f5fd31071/AA-DevOps/AACoRN/Trigger_Remote_Job'
+					}
+				}
+			}
+
+			
+			stage('Notifier') {
+				echo "*****Notify*****"	 
+				currentBuild.result = "Success"
+				emailext attachLog: true, body: "${userName}<br></br>Check CloudBees Jenkins console output at ${env.BUILD_URL} to view the results.<br></br> ", mimeType: 'text/html', subject: "${env.JOB_NAME} - Build # ${env.BUILD_NUMBER} - ${currentBuild.result}", to: "${env.notifyUsers}"
+				echo "Status mail: ${currentBuild.result}"
+			}
+
+		}
+	}
+	catch (err) {
+		echo "Failed: ${err}"
+		currentBuild.result = "Failure"
+		echo "Status in catch: ${currentBuild.result}"
+		
+		emailext attachLog: true, body: "Check console output at ${env.BUILD_URL} to view the results.<br></br> ", mimeType: 'text/html', subject: "${env.JOB_NAME} - Build # ${env.BUILD_NUMBER} - ${currentBuild.result}", to: "${env.notifyUsers}"
+
+		throw err
+	}
+}
