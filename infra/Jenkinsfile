@@ -2,7 +2,7 @@ node {
     def tfHome
     stage('Clone'){
         git credentialsId: 'GIT', url: 'https://github.com/jmpcba/MG.git'
-        tfHome = tool name: ‘Terraform’
+        tfHome = tool name: ‘TF’,  type: 'org.jenkinsci.plugins.terraform.TerraformInstallation'
     }
 
     if (params.PLAN){
