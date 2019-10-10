@@ -1,8 +1,8 @@
 node {
+    def tfHome
     stage('Clone'){
         git credentialsId: 'GIT', url: 'https://github.com/jmpcba/MG.git'
-        def tfHome = tool name: ‘Terraform’
-        env.PATH = “${tfHome}:${env.PATH}”
+        tfHome = tool name: ‘Terraform’
     }
 
     if (params.PLAN){
@@ -14,12 +14,12 @@ node {
                 
                 dir('infra') {
                     withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1'){
-                            sh '''
+                            sh """"
                                 set +x
-                                terraform version
-                                terraform init
-                                terraform plan
-                                '''
+                                ${tfHome}/terraform version
+                                ${tfHome}/terraform init
+                                ${tfHome}/terraform plan
+                                """
                     }
                 }
             }
@@ -35,12 +35,12 @@ node {
                 
                 dir('infra') {
                     withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1'){
-                            sh '''
+                            sh """
                                 set +x
-                                terraform version
-                                terraform init
-                                terraform apply -auto-approve
-                                '''
+                                ${tfHome}/terraform version
+                                ${tfHome}/terraform init
+                                ${tfHome}/terraform apply -auto-approve
+                                """
                     }
                 }
             }
