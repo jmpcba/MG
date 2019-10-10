@@ -1,6 +1,6 @@
-def tfHome = tool name: 'TF', type: 'org.jenkinsci.plugins.terraform.TerraformInstallation'
-
 node {
+    def tfHome = tool name: 'TF', type: 'org.jenkinsci.plugins.terraform.TerraformInstallation'
+    
     stage('Clone'){
         git credentialsId: 'GIT', url: 'https://github.com/jmpcba/MG.git'
     }
@@ -14,12 +14,9 @@ node {
                 
                 dir('infra') {
                     withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1'){
-                            sh """"
-                                set +x
-                                ${tfHome}/terraform version
-                                ${tfHome}/terraform init
-                                ${tfHome}/terraform plan
-                                """
+                        sh "${tfHome}/terraform version"
+                        sh "${tfHome}/terraform init"
+                        sh "${tfHome}/terraform plan"
                     }
                 }
             }
@@ -35,12 +32,9 @@ node {
                 
                 dir('infra') {
                     withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1'){
-                            sh """
-                                set +x
-                                ${tfHome}/terraform version
-                                ${tfHome}/terraform init
-                                ${tfHome}/terraform apply -auto-approve
-                                """
+                        sh "${tfHome}/terraform version"
+                        sh "${tfHome}/terraform init"
+                        sh "${tfHome}/terraform apply -auto-approve"
                     }
                 }
             }
