@@ -29,7 +29,7 @@ WildRydes.map = WildRydes.map || {};
             var unit = $(element).find("[id^=txtUnitario]").val()
             var prod = $(element).find("[id^=txtProducto]").val()
             var tot = $(element).find("[id^=txtTotal]").val()
-            totalPresupuesto += tot
+            totalPresupuesto += parseFloat(tot)
 
             var presupuesto = {
                 producto: prod,
