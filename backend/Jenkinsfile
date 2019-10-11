@@ -16,6 +16,7 @@ node {
             sh "python3 -m venv env"
             sh """. env/bin/activate
             python3 -m pip install -r backend/requirements.txt
+            chmod 755 backend/main.py
             zip -qj9 backend/presupuesto.zip backend/main.py
             chmod 755 backend/presupuesto.zip
             """
