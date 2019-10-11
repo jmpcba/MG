@@ -32,6 +32,7 @@ def get_mail_body(presupuestos, monto_total):
 def lambda_handler(event, context):
     
     body = event['body']
+    body = json.loads(body)
     SENDER = "MG PLacas <jmpcba@gmail.com>"
     AWS_REGION = "us-east-1"
     SUBJECT = "Presupuesto MG Placas"
