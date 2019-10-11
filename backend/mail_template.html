@@ -1,20 +1,31 @@
 <html>
     <head>
         <style>
-            table, th, td {
+            td {
                 border: 1px solid black;
+                border-collapse: collapse;
+            }
+
+            th, .total {
+                border: 2px solid black;
+                border-collapse: collapse;
+            }
+
+            table{
+                border: 2px solid black;
                 border-collapse: collapse;
                 width: 50%;
             }
         </style>
     </head>
         <body>
-        <h1>PRESUPUESTO MG PLACAS Y PLACARES</h1>
+        <h1>MG PLACAS Y PLACARES</h1>
+        <h2>PRESUPUESTO</h2>
         <h3>Fecha: [@FECHA@]</h3>
         <table>
             <tr><th>PRODUCTO</th><th>CANTIDAD</th><th>UNITARIO</th><th>TOTAL</th></tr>
             [@TABLA@]
-            <tr><td><strong>TOTAL:</strong></td><td colspan="3">[@TOTAL@]</td></tr>
+            <tr class="total"><td class="total"><strong>TOTAL:</strong></td><td colspan="3"><strong>$[@TOTAL@]</strong></td></tr>
         </table>
     </body>
 </html>

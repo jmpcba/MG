@@ -21,7 +21,7 @@ def get_mail_body(presupuestos, monto_total):
     body = obj.get()['Body'].read().decode('utf-8') 
 
     for p in presupuestos:
-        table += f"<tr><td>{p['producto']}</td><td>{p['cantidad']}</td><td>{p['unitario']}</td><td>{p['total']}</td></tr>"
+        table += f"<tr><td>{p['producto'].upper()}</td><td>{p['cantidad']}</td><td>${p['unitario']}</td><td>${p['total']}</td></tr>"
     
     body = body.replace('[@TABLA@]', table)
     body = body.replace('[@TOTAL@]', str(monto_total))
