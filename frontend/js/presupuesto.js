@@ -21,13 +21,15 @@ WildRydes.map = WildRydes.map || {};
 
         var URL = "https://8slcpf2nkc.execute-api.us-east-1.amazonaws.com/prod/v1/presupuesto"
         var items = []
-        console.log($(".entradas").length)
+        var totalPresupuesto = 0
+
         $(".entradas").each(function (i, element) {
 
             var cant = $(element).find("[id^=txtCant]").val()
             var unit = $(element).find("[id^=txtUnitario]").val()
             var prod = $(element).find("[id^=txtProducto]").val()
             var tot = $(element).find("[id^=txtTotal]").val()
+            totalPresupuesto += tot
 
             var presupuesto = {
                 producto: prod,
@@ -40,11 +42,9 @@ WildRydes.map = WildRydes.map || {};
         
         var data = {
             mail: $("#txtMail").val(),
-            presupuestos: items
+            presupuestos: items,
+            totalPresupuesto: totalPresupuesto
         }
-
-        console.log(data)
-        console.log(items)
 
         $.ajax({
             type: "POST",
@@ -63,7 +63,7 @@ WildRydes.map = WildRydes.map || {};
                 // clear form and show a success message
                 alert("Presupuesto enviado a: " + data.mail);
                 $("#frmPresupuesto")[0].reset();
-                //location.reload();
+                location.reload();
             },
 
             error: function (xhr, status, error) {

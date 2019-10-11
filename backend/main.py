@@ -11,21 +11,19 @@ def return_code(code, body):
             'body': json.dumps(body, default=str)
             }
 
-def mail_body(presupuestos):
-    table = ''
+def get_mail_body(presupuestos, monto_total):
+
+    s3 = boto3.resource('s3')
+    obj = s3.Object('jmpcba-lambda','mail_template.html')
+    table = None
+    body = obj.get['body'].read()
+
     for p in presupuestos:
         table += f"<tr><td>{p['producto']}</td><td>{p['cantidad']}</td><td>{p['unitario']}</td><td>{p['total']}</td></tr>"
-    body = """<html>
-        <head></head>
-            <body>
-            <h1>PRESUPUESTO MG PLACAS Y PLACARES</h1>
-            <table>
-                [TABLA]
-            </table>
-        </body>
-    </html>"""
-    body = body.replace('[TABLA]', table)
-    print(body)
+    
+    body = body.replace('[@TABLA@]', table)
+    body = body.replace('[@TOTAL@]', monto_total)
+    
     return body
 
 def lambda_handler(event, context):
@@ -40,25 +38,26 @@ def lambda_handler(event, context):
     CHARSET = "UTF-8"
     client = boto3.client('ses',region_name=AWS_REGION)
     presupuestos = body['presupuestos']
-    mail = body['mail']
-    cuerpo = mail_body(presupuestos)
+    mail_to = body['mail']
+    monto_total = body['totalPresupuesto']
+    mail_body = get_mail_body(presupuestos, monto_total)
 
     try:
         response = client.send_email(
             Destination={
                 'ToAddresses': [
-                    mail,
+                    mail_to,
                 ],
             },
             Message={
                 'Body': {
                     'Html': {
                         'Charset': CHARSET,
-                        'Data': cuerpo,
+                        'Data': mail_body,
                     },
                     'Text': {
                         'Charset': CHARSET,
-                        'Data': cuerpo,
+                        'Data': mail_body,
                     },
                 },
                 'Subject': {

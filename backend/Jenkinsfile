@@ -7,7 +7,7 @@ node {
     stage('Clone'){
         git credentialsId: 'GIT', url: 'https://github.com/jmpcba/MG.git'
     }
-
+/*
     stage("build") {
         dir("${WORKSPACE}") {
             echo "#########################"
@@ -26,7 +26,7 @@ node {
             }
         }
     }
-
+*/
     stage('Deploy') {
         dir("${WORKSPACE}"){
             echo "####################"
@@ -34,8 +34,8 @@ node {
             echo "####################"  
                 withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1') {
                     sh """. env/bin/activate
-                    aws s3 cp presupuesto.zip s3://jmpcba-lambda/presupuesto.zip
-                    aws lambda update-function-code --function-name mg_presupuesto --s3-bucket jmpcba-lambda --s3-key presupuesto.zip
+                    aws s3 sync backend s3://jmpcba-lambda/
+                    aws lambda update-function-code --function-name mg_presupuesto --s3-bucket jmpcba-lambda --s3-key main.py
                     deactivate"""
             }
         }

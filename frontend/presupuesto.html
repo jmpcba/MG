@@ -28,17 +28,28 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        <label for="exampleInputEmail1">Email cliente</label>
+                        <h4><label for="exampleInputEmail1">Email cliente</label></h4>
                         <input type="email" class="form-control" id="txtMail" aria-describedby="emailHelp" placeholder="email cliente">
                         <small id="emailHelp" class="form-text text-muted">Ingrese el mail del cliente.</small>
                     </div>
                 </div>
             </div>
+            <br>
             <div class="row">
-                <div class="col-md-12">
-                    <label>Presupuesto</label>
+                <div class="col-md-9">
+                    <h4>Presupuesto</h4>
+                </div>
+                <div class="form-group col-md-3">
+                    Monto Total:
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon-unitario">$</span>
+                        </div>
+                        <input type="text" class="form-control validarNum" name="unit" id="txtTotalFinal" placeholder="Total" aria-label="Total" aria-describedby="basic-addon-total" readonly>
+                    </div>
                 </div>
             </div>
+            <hr>
             <div class="row entradas">
                 <div class="form-group col-md-6">
                     <input type="text" class="form-control" name="prod" id="txtProducto" placeholder="Producto">
@@ -114,12 +125,12 @@
             $("#btnEnviar").attr("disabled", true)
 
             //VALIDACIONES
-
             $("div").on('keyup', 'input', function(){
                 validar()
             })
 
             function validar(){
+                console.log("inicia validar")
                 $("input").each(function( i, element ){
                     var valor = $(element).val()
                     if(valor == ""){
@@ -132,6 +143,7 @@
                         $(element).addClass("is-valid")
                         $(element).removeClass("is-invalid")
                         }
+                calcularTotal()
                 })
 
                 var txtMail = $("#txtMail")
@@ -180,6 +192,19 @@
                 }
                 validar()
             })
+
+            function calcularTotal(){
+                var total = 0
+                $("#txtTotal").each(function( i, element ){
+                    if ($(element).val() != ""){
+                        total += parseInt($(element).val())
+                    }
+                    
+                })
+                if (total != 0){
+                    $("#txtTotalFinal").val(total)
+                }
+            }
         })
 
     </script>
