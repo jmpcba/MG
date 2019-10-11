@@ -15,14 +15,14 @@ def get_mail_body(presupuestos, monto_total):
 
     s3 = boto3.resource('s3')
     obj = s3.Object('jmpcba-lambda','mail_template.html')
-    table = None
-    body = obj.get['body'].read()
+    table = ''
+    body = obj.get()['Body'].read().decode('utf-8') 
 
     for p in presupuestos:
         table += f"<tr><td>{p['producto']}</td><td>{p['cantidad']}</td><td>{p['unitario']}</td><td>{p['total']}</td></tr>"
     
     body = body.replace('[@TABLA@]', table)
-    body = body.replace('[@TOTAL@]', monto_total)
+    body = body.replace('[@TOTAL@]', str(monto_total))
     
     return body
 
