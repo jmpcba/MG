@@ -33,10 +33,13 @@ node {
             echo "# UPLOADING TO AWS #"
             echo "####################"  
                 withAWS(credentials: 'AWS CREDENTIALS', region: 'us-east-1') {
-                    sh """. env/bin/activate
+                    sh """
+                    python3 -m venv env
+                    . env/bin/activate
                     aws s3 sync backend s3://jmpcba-lambda/
                     aws lambda update-function-code --function-name mg_presupuesto --s3-bucket jmpcba-lambda --s3-key main.py
-                    deactivate"""
+                    deactivate
+                    """
             }
         }
     }
