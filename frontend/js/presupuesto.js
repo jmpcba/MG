@@ -46,6 +46,8 @@ WildRydes.map = WildRydes.map || {};
             totalPresupuesto: totalPresupuesto
         }
 
+        console.log(data)
+
         $.ajax({
             type: "POST",
             url: URL,
