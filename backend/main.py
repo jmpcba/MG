@@ -1,5 +1,6 @@
 import json
 import boto3
+from datetime import date
 
 def return_code(code, body):
     return {
@@ -16,6 +17,7 @@ def get_mail_body(presupuestos, monto_total):
     s3 = boto3.resource('s3')
     obj = s3.Object('jmpcba-lambda','mail_template.html')
     table = ''
+    today = date.today().strftime("%d-%m-%Y")
     body = obj.get()['Body'].read().decode('utf-8') 
 
     for p in presupuestos:
@@ -23,18 +25,16 @@ def get_mail_body(presupuestos, monto_total):
     
     body = body.replace('[@TABLA@]', table)
     body = body.replace('[@TOTAL@]', str(monto_total))
+    body = body.replace('[@FECHA@]', today)
     
     return body
 
 def lambda_handler(event, context):
     
     body = event['body']
-    #body = json.loads(body)
-    
-    
     SENDER = "MG PLacas <jmpcba@gmail.com>"
     AWS_REGION = "us-east-1"
-    SUBJECT = "Presupuesto MG Placas Y Placares"
+    SUBJECT = "Presupuesto MG Placas"
     CHARSET = "UTF-8"
     client = boto3.client('ses',region_name=AWS_REGION)
     presupuestos = body['presupuestos']
