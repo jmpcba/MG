@@ -33,7 +33,7 @@ def lambda_handler(event, context):
     
     body = event['body']
     body = json.loads(body)
-    SENDER = "MG PLacas <jmpcba@gmail.com>"
+    SENDER = "MG Placas SAS <mgplacassas@gmail.com>"
     AWS_REGION = "us-east-1"
     SUBJECT = "Presupuesto MG Placas"
     CHARSET = "UTF-8"
