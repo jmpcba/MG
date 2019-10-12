@@ -45,7 +45,7 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text" id="basic-addon-unitario">$</span>
                         </div>
-                        <input type="text" class="form-control validarNum" name="unit" id="txtTotalFinal" placeholder="Total" aria-label="Total" aria-describedby="basic-addon-total" readonly>
+                        <input type="text" class="form-control validarNum" name="unit" id="txtTotalFinal" placeholder="Total" aria-label="Total" aria-describedby="basic-addon-total" tabindex="-1" readonly>
                     </div>
                 </div>
             </div>
@@ -70,7 +70,7 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text" id="basic-addon1">$</span>
                         </div>
-                        <input type="text" class="form-control" name="total" id="txtTotal" placeholder="Total" aria-label="Total" aria-describedby="basic-addon1" readonly>
+                        <input type="text" class="form-control tot" name="total" id="txtTotal" placeholder="Total" aria-label="Total" aria-describedby="basic-addon1" readonly>
                     </div>
                 </div>
             </div>
@@ -110,7 +110,7 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text" id="basic-addon1">$</span>
                         </div>
-                        <input type="text" class="form-control" name="total${i}" id="txtTotal" placeholder="Total" aria-label="Total" aria-describedby="basic-addon1" readonly>
+                        <input type="text" class="form-control tot" name="total${i}" id="txtTotal" placeholder="Total" aria-label="Total" aria-describedby="basic-addon1" readonly>
                     </div>
                 </div>
             </div>`
@@ -126,24 +126,32 @@
 
             //VALIDACIONES
             $("div").on('keyup', 'input', function(){
+                var parDiv = $(this).parents(".row")
+                var cant = parDiv.find("[id^=txtCant]").val()
+                var precio = parDiv.find("[id^=txtUnitario]").val()
+
+                if (!isNaN(cant) && !isNaN(precio) && cant != "" && precio != ""){
+                    parDiv.find("[id^=txtTotal]").val(precio * cant)
+                }else {
+                    parDiv.find("[id^=txtTotal]").val(0)
+                }
+                calcularTotal()
                 validar()
             })
 
             function validar(){
-                console.log("inicia validar")
                 $("input").each(function( i, element ){
                     var valor = $(element).val()
-                    if(valor == ""){
+                    if(valor == "" || valor == 0){
                         $(element).addClass("is-invalid")
                         $(element).removeClass("is-valid")
-                    }else if($(element).hasClass('validarNum') && isNaN(valor)){
+                    }else if($(element).hasClass('validarNum') && valor != 0 && isNaN(valor)){
                         $(element).addClass("is-invalid")
                         $(element).removeClass("is-valid")
                     }else{
                         $(element).addClass("is-valid")
                         $(element).removeClass("is-invalid")
                         }
-                calcularTotal()
                 })
 
                 var txtMail = $("#txtMail")
@@ -162,7 +170,7 @@
                     $("#btnEnviar").attr("disabled", true)
                 }
             }
-
+/*
             $("div").on('keyup', '.validarNum', function(){
                 var parDiv = $(this).parents(".row")
                 var cant = parDiv.find("[id^=txtCant]").val()
@@ -170,8 +178,10 @@
 
                 if (!isNaN(cant) && !isNaN(precio) && cant != "" && precio != ""){
                     parDiv.find("[id^=txtTotal]").val(precio * cant)
+                }else {
+                    parDiv.find("[id^=txtTotal]").val(0)
                 }
-            })
+            })*/
 
             $("#btnAgregar").click(function(){
                 i++
@@ -195,7 +205,7 @@
 
             function calcularTotal(){
                 var total = 0
-                $("#txtTotal").each(function( i, element ){
+                $(".tot").each(function( i, element ){
                     if ($(element).val() != ""){
                         total += parseFloat($(element).val())
                     }
