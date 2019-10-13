@@ -43,7 +43,7 @@ def lambda_handler(event, context):
     presupuestos = body['presupuestos']
     mail_to = body['mail']
     monto_total = body['totalPresupuesto']
-    nota = body['nota']
+    nota = body['nota'].upper()
     cliente = body['cliente']
     mail_body = get_mail_body(presupuestos, monto_total, nota, cliente)
 
