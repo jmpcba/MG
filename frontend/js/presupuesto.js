@@ -48,8 +48,6 @@ WildRydes.map = WildRydes.map || {};
             totalPresupuesto: totalPresupuesto
         }
 
-        $('#gif').modal('show')
-
         $.ajax({
             type: "POST",
             url: URL,
@@ -63,6 +61,10 @@ WildRydes.map = WildRydes.map || {};
             data: JSON.stringify(data),
 
 
+            beforeSend: function(){
+                $('#spnEnviar').show()
+               },
+
             success: function () {
                 alert("Presupuesto enviado a: " + data.mail);
                 $("#frmPresupuesto")[0].reset();
@@ -71,15 +73,20 @@ WildRydes.map = WildRydes.map || {};
 
             error: function (xhr, status, error) {
                 var err = eval("(" + xhr.responseText + ")");
-                $('#gif').modal('hide')
+                alert(error)
                 alert(err.Message);
-            }
+            },
+
+            complete:function(data){
+                $('#spnEnviar').hide()
+                },
         });
     }
 
     // Register click handler for #request button
     $(function onDocReady() {
         $('#btnEnviar').click(handleRequestClick);
+        //$('#btnProbar').click(probar)
 
         WildRydes.authToken.then(function updateAuthMessage(token) {
             if (token) {
@@ -94,6 +101,7 @@ WildRydes.map = WildRydes.map || {};
 
     function handleRequestClick(event) {
         event.preventDefault();
+        $('#spnEnviar').show()
         enviarMail();
     }
 }(jQuery));
