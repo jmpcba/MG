@@ -1,6 +1,10 @@
 <html>
     <head>
         <style>
+            * {
+                font-family: Arial;
+            }
+            
             td {
                 border: 1px solid black;
                 border-collapse: collapse;
@@ -24,7 +28,7 @@
                 text-align: center;
             }
 
-            h2 {
+            h2, h3 {
                 text-align: center;
             }
 
@@ -35,16 +39,27 @@
             body {
                 background-color: #ebe8e8;
             }
+
+            .footer{
+                text-align: center;
+            }
         </style>
     </head>
         <body>
         <h1>MG PLACAS Y PLACARES</h1>
         <h2>Presupuesto</h2>
+        <h3>[@CLIENTE@]</h4>
         <h4>Fecha: [@FECHA@]</h3>
         <table>
             <tr><th>PRODUCTO</th><th>CANTIDAD</th><th>UNITARIO</th><th>MONTO</th></tr>
             [@TABLA@]
             <tr class="total"><td class="total"><strong>TOTAL:</strong></td><td colspan="3"><strong>$[@TOTAL@]</strong></td></tr>
         </table>
+        <br>
+        <strong>NOTA: [@NOTA@]</strong>
+        <br>
+        <hr>
+        <p class="footer"><small class="footer">Bahamas 4543 - B° Cabo Farina  / Tel: 4618484 / Cordoba Argentina</small></p>
+        
     </body>
 </html>

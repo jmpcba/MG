@@ -42,6 +42,8 @@ WildRydes.map = WildRydes.map || {};
         
         var data = {
             mail: $("#txtMail").val(),
+            cliente:$("#txtCliente").val(),
+            nota:$("#txtNotas").val(),
             presupuestos: items,
             totalPresupuesto: totalPresupuesto
         }

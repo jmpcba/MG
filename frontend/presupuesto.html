@@ -11,7 +11,7 @@
   <body>
     <div class="container">
         <div class="page-header text-center">
-            <h1>Presupuesto MG Placas y Placares</h1>
+            <h1>Presupuesto MG Placas SAS</h1>
             <hr>
         </div>
         <div class="row float-right">
@@ -26,27 +26,25 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="form-group">
-                        <h4><label for="exampleInputEmail1">Email cliente</label></h4>
-                        <input type="email" class="form-control" id="txtMail" aria-describedby="emailHelp" placeholder="email cliente">
-                        <small id="emailHelp" class="form-text text-muted">Ingrese el mail del cliente.</small>
+                        <h4><label for="exampleInputEmail1">Cliente</label></h4>
+                        <input type="email" class="form-control" id="txtCliente" aria-describedby="emailHelp" placeholder="cliente">
+                        <small id="emailHelp" class="form-text text-muted">Nombre cliente.</small>
                     </div>
                 </div>
+                <div class="col-md-6">
+                        <div class="form-group">
+                            <h4><label for="exampleInputEmail1">Email</label></h4>
+                            <input type="email" class="form-control" id="txtMail" aria-describedby="emailHelp" placeholder="email cliente">
+                            <small id="emailHelp" class="form-text text-muted">Ingrese el mail del cliente.</small>
+                        </div>
+                    </div>
             </div>
             <br>
             <div class="row">
                 <div class="col-md-9">
                     <h4>Presupuesto</h4>
-                </div>
-                <div class="form-group col-md-3">
-                    Monto Total:
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text" id="basic-addon-unitario">$</span>
-                        </div>
-                        <input type="text" class="form-control validarNum" name="unit" id="txtTotalFinal" placeholder="Total" aria-label="Total" aria-describedby="basic-addon-total" tabindex="-1" readonly>
-                    </div>
                 </div>
             </div>
             <hr>
@@ -74,10 +72,33 @@
                     </div>
                 </div>
             </div>
-            <button id="btnAgregar" type="button" class="btn btn-secondary"><strong>+</strong></button>
-            <button id="btnEliminar" type="button" class="btn btn-secondary"><strong>-</strong></button>
-            <button id="btnEnviar" type="button" class="btn btn-primary float-right">Enviar</button>
-            </form>
+            <div class=row>
+                <div class=col-md-9>
+                    <button id="btnAgregar" type="button" class="btn btn-secondary"><strong>+</strong></button>
+                    <button id="btnEliminar" type="button" class="btn btn-secondary"><strong>-</strong></button>            
+                </div>
+                <div class="form-group col-md-3">
+                    <div class="input-group mb-3">
+                            <strong>Monto Total: </strong> 
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon-unitario">$</span>
+                        </div>
+                        <input type="text" class="form-control validarNum" name="unit" id="txtTotalFinal" placeholder="Total" aria-label="Total" aria-describedby="basic-addon-total" tabindex="-1" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <hr>
+                        <h4><label for="txtNota">Notas</label></h4>
+                        <input type="text" class="form-control" id="txtNotas" aria-describedby="txtNota" placeholder="Notas">
+                        <small id="notasHelp" class="form-text text-muted">Notas, cobro de IVA, comentarios</small>
+                    </div>
+                </div>
+            </div>
+                <button id="btnEnviar" type="button" class="btn btn-primary float-right">Enviar</button>
+        </form>
     </div>
 
     <!-- Optional JavaScript -->
@@ -91,6 +112,7 @@
             
             function nuevaLinea(i){
                 var dom = `<div class="row entradas">
+                <hr>
                 <div class="form-group col-md-6">
                     <input type="text" class="form-control" name="prod${i}" id="txtProducto" placeholder="Producto">
                 </div>
@@ -186,7 +208,7 @@
             $("#btnAgregar").click(function(){
                 i++
                 dom = nuevaLinea(i)
-                $(".row:last").after(dom)
+                $(".entradas:last").after(dom)
                 $("#btnEliminar").attr("disabled", false)
                 validar()
             }) 
@@ -194,7 +216,7 @@
             $("#btnEliminar").click(function(){
                 
                 if (i>0){
-                    $(".row:last").remove()
+                    $(".entradas:last").remove()
                     i--
                 }
                 if(i==0){

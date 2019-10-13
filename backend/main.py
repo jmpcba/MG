@@ -12,7 +12,7 @@ def return_code(code, body):
             'body': json.dumps(body, default=str)
             }
 
-def get_mail_body(presupuestos, monto_total):
+def get_mail_body(presupuestos, monto_total, nota, cliente):
 
     s3 = boto3.resource('s3')
     obj = s3.Object('jmpcba-lambda','mail_template.html')
@@ -26,6 +26,8 @@ def get_mail_body(presupuestos, monto_total):
     body = body.replace('[@TABLA@]', table)
     body = body.replace('[@TOTAL@]', str(monto_total))
     body = body.replace('[@FECHA@]', today)
+    body = body.replace('[@NOTA@]', nota)
+    body = body.replace('[@CLIENTE@]', cliente)
     
     return body
 
@@ -41,7 +43,9 @@ def lambda_handler(event, context):
     presupuestos = body['presupuestos']
     mail_to = body['mail']
     monto_total = body['totalPresupuesto']
-    mail_body = get_mail_body(presupuestos, monto_total)
+    nota = body['nota']
+    cliente = body['cliente']
+    mail_body = get_mail_body(presupuestos, monto_total, nota, cliente)
 
     try:
         response = client.send_email(
