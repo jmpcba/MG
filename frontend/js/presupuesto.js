@@ -48,7 +48,7 @@ WildRydes.map = WildRydes.map || {};
             totalPresupuesto: totalPresupuesto
         }
 
-        console.log(data)
+        $('#gif').modal('show')
 
         $.ajax({
             type: "POST",
@@ -64,7 +64,6 @@ WildRydes.map = WildRydes.map || {};
 
 
             success: function () {
-                // clear form and show a success message
                 alert("Presupuesto enviado a: " + data.mail);
                 $("#frmPresupuesto")[0].reset();
                 location.reload();
@@ -72,6 +71,7 @@ WildRydes.map = WildRydes.map || {};
 
             error: function (xhr, status, error) {
                 var err = eval("(" + xhr.responseText + ")");
+                $('#gif').modal('hide')
                 alert(err.Message);
             }
         });
