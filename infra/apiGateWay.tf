@@ -59,5 +59,5 @@ resource "aws_api_gateway_integration" "presupuesto_post_integration" {
     content_handling        = "CONVERT_TO_TEXT" 
     integration_http_method = "POST"
     type                    = "AWS_PROXY"
-    uri                     = "arn:aws:apigateway:${var.region}:lambda:path/2015-03-31/functions/${aws_lambda_function.MG_presupuesto_lambda.arn}/invocations"
+    uri                     = "arn:aws:apigateway:${var.region}:lambda:path/2015-03-31/functions/${aws_lambda_function.MG_lambda.arn}/invocations"
 }

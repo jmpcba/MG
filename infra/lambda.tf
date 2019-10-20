@@ -1,7 +1,7 @@
 resource "aws_lambda_permission" "MG_lambda_permission" {
   statement_id  = "Allow_data_service_APIInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = "${aws_lambda_function.MG_presupuesto_lambda.function_name}"
+  function_name = "${aws_lambda_function.MG_lambda.function_name}"
   principal     = "apigateway.amazonaws.com"
 
   # The /*/*/* part allows invocation from any stage, method and resource path
