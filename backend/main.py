@@ -51,7 +51,7 @@ def lambda_handler(event, context):
         response = client.send_email(
             Destination={
                 'ToAddresses': [
-                    mail_to,
+                    mail_to, 'mgplacassas@gmail.com'
                 ],
             },
             Message={
