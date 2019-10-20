@@ -9,7 +9,7 @@ resource "aws_lambda_permission" "MG_lambda_permission" {
   source_arn = "${aws_api_gateway_rest_api.MG_restapi.execution_arn}/*/*/*"
 }
 
-resource "aws_lambda_function" "MG_presupuesto_lambda" {
+resource "aws_lambda_function" "MG_lambda" {
   function_name = "mg_presupuesto"
   s3_bucket     = "jmpcba-lambda"
   s3_key        = "presupuesto.zip"
