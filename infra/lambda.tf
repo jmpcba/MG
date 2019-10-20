@@ -1,5 +1,5 @@
 resource "aws_lambda_permission" "MG_lambda_permission" {
-  statement_id  = "Allow_data_service_APIInvoke"
+  statement_id  = "Allow_APIInvoke"
   action        = "lambda:InvokeFunction"
   function_name = "${aws_lambda_function.MG_lambda.function_name}"
   principal     = "apigateway.amazonaws.com"
@@ -14,7 +14,7 @@ resource "aws_lambda_function" "MG_lambda" {
   s3_bucket     = "jmpcba-lambda"
   s3_key        = "presupuesto.zip"
   role          = "${aws_iam_role.MG_presupuesto_lambda_role.arn}"
-  runtime       = "python3.6"
+  runtime       = "python3.7"
   handler       = "main.handler"
 }
 
