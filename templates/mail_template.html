@@ -1,0 +1,65 @@
+<html>
+    <head>
+        <style>
+            * {
+                font-family: Arial;
+            }
+            
+            td {
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+
+            th{
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+
+            table{
+                border: 1px solid black;
+                border-collapse: collapse;
+                width: 50%;
+                margin-left:auto; 
+                margin-right:auto;
+            }
+            
+            h1{
+                color: red;
+                text-align: center;
+            }
+
+            h2, h3 {
+                text-align: center;
+            }
+
+            h4 {
+                text-align: right;
+            }
+
+            body {
+                background-color: #ebe8e8;
+            }
+
+            .footer{
+                text-align: center;
+            }
+        </style>
+    </head>
+        <body>
+        <h1>MG PLACAS SAS</h1>
+        <h2>Presupuesto</h2>
+        <h3>[@CLIENTE@]</h4>
+        <h4>Fecha: [@FECHA@]</h3>
+        <table>
+            <tr><th>PRODUCTO</th><th>CANTIDAD</th><th>UNITARIO</th><th>MONTO</th></tr>
+            [@TABLA@]
+            <tr class="total"><td class="total"><strong>TOTAL:</strong></td><td colspan="3"><strong>$[@TOTAL@]</strong></td></tr>
+        </table>
+        <br>
+        <strong>NOTA: [@NOTA@]</strong>
+        <br>
+        <hr>
+        <p class="footer"><small class="footer">Bahamas 4543 - B° Cabo Farina  / Tel: 4618484 / Cordoba Argentina</small></p>
+        
+    </body>
+</html>
