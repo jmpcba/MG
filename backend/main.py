@@ -1,6 +1,7 @@
 import json
 import boto3
-from datetime import date
+import datetime
+from botocore.exceptions import ClientError
 
 def return_code(code, body):
     return {
@@ -13,12 +14,13 @@ def return_code(code, body):
             }
 
 def get_mail_body(presupuestos, monto_total, nota, cliente):
+    bucket = 'jmpcba-lambda'
+    key = 'mail_template.html'
+    s3 = S3(bucket, key)
 
-    s3 = boto3.resource('s3')
-    obj = s3.Object('jmpcba-lambda','mail_template.html')
     table = ''
     today = date.today().strftime("%d-%m-%Y")
-    body = obj.get()['Body'].read().decode('utf-8') 
+    body = s3.get_file_contents()
 
     for p in presupuestos:
         table += f"<tr><td>{p['producto'].upper()}</td><td>{p['cantidad']}</td><td>${p['unitario']}</td><td>${p['total']}</td></tr>"
@@ -41,17 +43,16 @@ def lambda_handler(event, context):
     CHARSET = "UTF-8"
     client = boto3.client('ses',region_name=AWS_REGION)
     presupuestos = body['presupuestos']
-    mail_to = body['mail']
+    cliente = Cliente(body['cliente'], body['mail'])
     monto_total = body['totalPresupuesto']
     nota = body['nota'].upper()
-    cliente = body['cliente']
-    mail_body = get_mail_body(presupuestos, monto_total, nota, cliente)
+    mail_body = get_mail_body(presupuestos, monto_total, nota, cliente.nombre)
 
     try:
         response = client.send_email(
             Destination={
                 'ToAddresses': [
-                    mail_to,
+                    cliente.mail,
                 ],
             },
             Message={
@@ -77,3 +78,45 @@ def lambda_handler(event, context):
     
     except Exception as e:
         return return_code(500, e)
+
+class Cliente:
+    def __init__(self, mail, nombre):
+        self.mail = mail
+        self.nombre = nombre
+    
+    def register(self):
+        found = False
+        clientes = []
+        today = datetime.date.today()
+        s3 = S3('jmpcba', 'registro.json')
+
+        clientes = json.loads(s3.get_file_contents())
+        
+        for c in clientes['clientes']:
+            if self.mail == c.get('cliente'):
+                c['fecha'] = today
+                found = True
+                break
+        
+        if not found:
+            d = {'cliente': self.mail, 'fecha': today}
+            clientes['clientes'].append(d)
+        
+        s3.set_file_content(json.dumps(clientes))
+
+class S3:
+    def __init__(self, bucket, key):
+        s3_resource = boto3.resource('s3')
+        self.s3_file = s3_resource.Object(bucket, key)
+    
+    def get_file_contents(self):
+        try:
+            return self.s3_file.get()['Body'].read().decode('utf-8')
+        except ClientError:
+            return None
+
+    def set_file_content(self, content):
+        try:
+            self.s3_file.get()['Body'].write(content)
+        except ClientError:
+            pass

@@ -1,0 +1,12 @@
+{
+  "clientes":[
+      {
+        "cliente": "jmpcba@gmail.com",
+        "fecha": "2019-10-20"
+      },
+      {
+        "cliente": "belenchogca@gmail.com",
+        "fecha": "2019-10-20"
+      }
+  ]
+}
