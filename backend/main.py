@@ -1,6 +1,11 @@
 import json
 import boto3
+import logging
 from datetime import date
+from botocore.exceptions import ClientError
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def return_code(code, body):
     return {
@@ -13,12 +18,13 @@ def return_code(code, body):
             }
 
 def get_mail_body(presupuestos, monto_total, nota, cliente):
+    bucket = 'jmpcba-lambda'
+    key = 'mail_template.html'
+    s3 = S3(bucket, key)
 
-    s3 = boto3.resource('s3')
-    obj = s3.Object('jmpcba-lambda','mail_template.html')
     table = ''
     today = date.today().strftime("%d-%m-%Y")
-    body = obj.get()['Body'].read().decode('utf-8') 
+    body = s3.get_file_contents()
 
     for p in presupuestos:
         table += f"<tr><td>{p['producto'].upper()}</td><td>{p['cantidad']}</td><td>${p['unitario']}</td><td>${p['total']}</td></tr>"
@@ -32,26 +38,64 @@ def get_mail_body(presupuestos, monto_total, nota, cliente):
     return body
 
 def lambda_handler(event, context):
-    
+    logger.info(event)
     body = event['body']
     body = json.loads(body)
-    SENDER = "MG Placas SAS <mgplacassas@gmail.com>"
-    AWS_REGION = "us-east-1"
-    SUBJECT = "Presupuesto MG Placas"
-    CHARSET = "UTF-8"
-    client = boto3.client('ses',region_name=AWS_REGION)
     presupuestos = body['presupuestos']
-    mail_to = body['mail']
+    cliente = Cliente(body['mail'], body['cliente'])
     monto_total = body['totalPresupuesto']
     nota = body['nota'].upper()
-    cliente = body['cliente']
-    mail_body = get_mail_body(presupuestos, monto_total, nota, cliente)
-
+    mail_body = get_mail_body(presupuestos, monto_total, nota, cliente.nombre)
+    
     try:
-        response = client.send_email(
+        cliente.send_email(mail_body)
+        return return_code(200, 'Mail Enviado')
+    
+    except Exception as e:
+        return return_code(500, e)
+
+class Cliente:
+    def __init__(self, mail, nombre):
+        self.mail = mail
+        self.nombre = nombre
+    
+    def register(self):
+        found = False
+        clientes = []
+        today = date.today()
+        s3 = S3('jmpcba-lambda', 'registro.json')
+
+        logger.info('REGISTRANDO')
+        clientes = json.loads(s3.get_file_contents())
+        logger.info(f'CLIENTES: {clientes}')
+        
+        for c in clientes['clientes']:
+            if self.mail == c.get('cliente'):
+                c['fecha'] = today
+                found = True
+                logger.info(f'Cliente {self.mail} encontrado, actualizando fecha de contacto')
+                break
+        
+        if not found:
+            logger.info('No se encontro el cliente, agregando')
+            d = {'cliente': self.mail, 'fecha': today}
+            clientes['clientes'].append(d)
+        
+        logger.info('Guardando cambios en S3')
+        s3.set_file_content(json.dumps(clientes, default=str))
+    
+    def send_email(self, mail_body):
+        SENDER = "MG Placas SAS <mgplacassas@gmail.com>"
+        AWS_REGION = "us-east-1"
+        SUBJECT = "Presupuesto MG Placas"
+        CHARSET = "UTF-8"
+    
+        ses = boto3.client('ses',region_name=AWS_REGION)
+        logger.info("Enviando Mail")
+        response = ses.send_email(
             Destination={
                 'ToAddresses': [
-                    mail_to, 'mgplacassas@gmail.com'
+                    self.mail,
                 ],
             },
             Message={
@@ -72,8 +116,33 @@ def lambda_handler(event, context):
             },
             Source=SENDER,
         )
-        print(response)
-        return return_code(200, 'Mail Enviado')
+        
+        logger.info("Mail enviado")
+        logger.info(response)
+        
+        try:
+            self.register()
+        except Exception as e:
+            logger.error(e)
+        
+
+
+class S3:
+    def __init__(self, bucket, key):
+        s3_resource = boto3.resource('s3')
+        self.s3_file = s3_resource.Object(bucket, key)
     
-    except Exception as e:
-        return return_code(500, e)
+    def get_file_contents(self):
+        try:
+            logger.info("Devolviendo Objeto desde S3")
+            return self.s3_file.get()['Body'].read().decode('utf-8')
+        except ClientError as e:
+            logger.error(e)
+            raise
+
+    def set_file_content(self, content):
+        try:
+            self.s3_file.put(Body=content)
+        except ClientError as e:
+            logger.error(e)
+            raise
